@@ -2,7 +2,7 @@
 
 namespace App\Commands;
 
-use App\Clients\Coinbase\Coinbase;
+use App\Exchanges\Coinbase\Coinbase;
 use Illuminate\Console\Scheduling\Schedule;
 use LaravelZero\Framework\Commands\Command;
 
@@ -14,7 +14,9 @@ class SyncCoinbase extends Command
 
     public function handle(Coinbase $coinbase)
     {
-        dd($coinbase->getAccounts());
+        $this->info('Syncing with Coinbase...');
+
+        $coinbase->execute($this);
     }
 
     public function schedule(Schedule $schedule): void
