@@ -26,26 +26,33 @@ class SyncCoinbase extends Command
         $this->accounts = collect();
         $this->transactions = collect();
 
-        $this->info('Syncing with Coinbase...');
-        $this->task('Fetch Coinbase accounts', function () {
-            $this->accounts = $this->coinbase->fetchAllAccounts();
-        });
+        $this->info('*** Coinbase connection opened ***');
+        $this->accounts = $this->coinbase->fetchAllAccounts();
 
-        $this->info('Fetch transactions for each account');
-        $this->accounts->each(function(CoinbaseAccount $account) {
-            $this->task("-- {$account->name()}", function() use ($account) {
-                $results = $this->coinbase->fetchAllTransactions($account);
-
-                if ($results->isNotEmpty()) {
-                    $this->transactions->push(...$results->all());
-                }
+        $this->info('Fetching transactions for:');
+        $this->accounts->each(function (CoinbaseAccount $account) {
+            $this->task("{$account->name()}", function () use ($account) {
+                $this->coinbase
+                    ->fetchAllTransactions($account)
+                    ->whenNotEmpty(function ($results) {
+                        $this->transactions->push(...$results->all());
+                    });
             });
 
-
-            if ($this->transactions->count() > 2) {
-                dd($this->transactions);
-            }
+            // if ($this->transactions->count() > 2) {
+            //     dd($this->transactions);
+            // }
         });
+
+        dd($this->transactions);
+
+        // transactions types
+        // send
+        // - positive amount.amount === deposit
+        // - negative amount.amount === withdrawal
+
+        // exchange_deposit
+        // - neg. amount.amount = withdrawal to coinbase pro? or any exchange?
     }
 
     public function schedule(Schedule $schedule): void
