@@ -2,26 +2,19 @@
 
 namespace App\Exchanges\Coinbase;
 
-use App\SyncingService;
-use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
-class Coinbase implements SyncingService
+class Coinbase
 {
-    public function __construct(private string $baseUrl, private string $apiKey, private string $apiSecret) { }
+    public function __construct(private string $apiKey, private string $apiSecret) { }
 
     public function fetchAllAccounts(): Collection
     {
-        return $this->getAll('/accounts?limit=100')->mapInto(CoinbaseAccount::class);
-    }
+        $startAfter = '91824c35-396c-5420-9d75-c334aae25f49';
 
-    public function fetchAllTransactions(CoinbaseAccount $account): Collection
-    {
-        return $this
-            ->getAll("{$account->resourcePath()}/transactions?expand=all&limit=100")
-            ->mapInto(CoinbaseTransaction::class);
+        return $this->getAll('/accounts?limit=100&starting_after='.$startAfter)->mapInto(CoinbaseAccount::class);
     }
 
     private function getAll(string $url): Collection
@@ -45,7 +38,7 @@ class Coinbase implements SyncingService
     {
         $url = Str::of($url)->remove('v2/')->start('/');
 
-        return Http::baseUrl($this->baseUrl)
+        return Http::baseUrl('https://api.coinbase.com/v2')
             ->contentType('application/json')
             ->withHeaders($this->buildRequestHeaders('GET', $url))
             ->get($url)
@@ -66,27 +59,8 @@ class Coinbase implements SyncingService
         ];
     }
 
-    public function execute(Command $command)
+    public function fetchAllTransactions(CoinbaseAccount $account): Collection
     {
-        $command->task('Fetch Coinbase accounts', function () {
-            $this->accounts = $this->getAll('/accounts?limit=100');
-        });
-
-        $command->info('Fetch transactions for each account');
-
-        $this->transactions = collect();
-        $this->accounts->each(function ($account) use ($command) {
-            $command->task("-- {$account['name']}", function () use ($account) {
-                $results = $this->getAll("{$account['resource_path']}/transactions?expand=all&limit=100");
-
-                if ($results->isNotEmpty()) {
-                    $this->transactions->push(...$results->all());
-                }
-            });
-
-            if ($this->transactions->count() > 4) {
-                dd($this->transactions);
-            }
-        });
+        return $this->getAll("{$account->resourcePath()}/transactions?expand=all&limit=100");
     }
 }

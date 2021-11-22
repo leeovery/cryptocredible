@@ -21,11 +21,13 @@ class CoinbaseTransaction
     protected string $amountCurrency;
 
     protected string $nativeValue;
+
     protected string $nativeCurrency;
 
     protected null|string $description;
 
     protected Carbon $createdAt;
+
     protected Carbon $updatedAt;
 
     protected null|string $transactionUrl;

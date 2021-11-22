@@ -17,6 +17,7 @@
     ],
     "require": {
         "php": "^8.0",
+        "bensampo/laravel-enum": "^4.1",
         "guzzlehttp/guzzle": "^7.4",
         "illuminate/http": "^8.0",
         "laminas/laminas-text": "^2.8",

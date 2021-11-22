@@ -4,6 +4,9 @@ namespace App\Commands;
 
 use App\Exchanges\Coinbase\Coinbase;
 use App\Exchanges\Coinbase\CoinbaseAccount;
+use App\Exchanges\Coinbase\CoinbaseTransactionTransformer;
+use App\TransactionDirector;
+use App\TransactionFactory;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Collection;
 use LaravelZero\Framework\Commands\Command;
@@ -39,12 +42,16 @@ class SyncCoinbase extends Command
                     });
             });
 
-            // if ($this->transactions->count() > 2) {
-            //     dd($this->transactions);
-            // }
+            if ($this->transactions->count() > 2) {
+                return false;
+            }
         });
 
-        dd($this->transactions);
+        $transactions = TransactionDirector::coinbase()->transform($this->transactions);
+
+        dd($transactions);
+
+        // normalise transactions to a standard format all exchanges can use...
 
         // transactions types
         // send
