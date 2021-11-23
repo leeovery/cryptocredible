@@ -13,36 +13,44 @@ class CoinbaseTransactionBuilder implements TransactionBuilder
     public function build(array $rawTxData): Transaction
     {
         $this->rawData = $rawTxData;
-        $transaction = (new Transaction)
-            ->setType($this->calculateTxType());
 
+        dump($rawTxData);
+
+        $transaction = (new Transaction)
+            ->setType($this->calculateTxType())
+            ->setAmount()
+            ->setFee();
+
+        // date
+        // tx hash
+        // tx url
+        // notes
+
+        dd($transaction);
 
         return $transaction;
     }
 
     private function calculateTxType(): TransactionType
     {
-        // transactions types
-        // send
-        // - positive amount.amount === deposit
-        // - negative amount.amount === withdrawal
-
-        // exchange_deposit
-        // - neg. amount.amount = withdrawal to coinbase pro? or any exchange?
-
         switch ($this->getRawData('type')) {
             case 'buy':
-                // fiat to crypto trade
-                break;
             case 'sell':
-                // crypto to fiat trade
-                break;
             case 'trade':
+                // buy = fiat to crypto trade
+                // sell = crypto to fiat trade
                 // crypto to crypto trade
-                break;
+                return TransactionType::Trade();
             case 'send':
-                // if from.name is "Coinbase Earn" then this is income from reward system.
-                // or "description": "Earn Task",
+                $fromName = $this->getRawData('from.name');
+                if ($fromName && str($fromName)->lower()->contains('coinbase earn')) {
+                    return TransactionType::Income();
+                }
+
+                $description = $this->getRawData('description');
+                if ($description && str($description)->lower()->contains('earn task')) {
+                    return TransactionType::Income();
+                }
 
                 if (is_negative($this->getRawData('amount.amount'))) {
                     return TransactionType::Withdrawal();
@@ -51,20 +59,22 @@ class CoinbaseTransactionBuilder implements TransactionBuilder
                 return TransactionType::Deposit();
             case 'pro_withdrawal':
                 // deposit from coinbase pro
-                break;
+                return TransactionType::Deposit();
             case 'exchange_deposit':
                 // withdrawal to exchange (coinbase pro only?)
-                break;
+                return TransactionType::Withdrawal();
             case 'exchange_withdrawal':
-                // deposit?
-                break;
+                // deposit from exchange (coinbase pro only?)
+                return TransactionType::Deposit();
             case 'fiat_deposit':
                 // deposit
-                break;
+                return TransactionType::Deposit();
             case 'fiat_withdrawal':
                 // withdrawal
-                break;
+                return TransactionType::Withdrawal();
         }
+
+        abort(400, 'Unmatchable transaction type');
     }
 
     private function getRawData($key = null): mixed

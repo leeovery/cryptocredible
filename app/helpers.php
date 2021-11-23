@@ -1,5 +1,14 @@
 <?php
 
+use Illuminate\Support\Str;
+
+if (! function_exists('str')) {
+    function str(string $value): \Illuminate\Support\Stringable
+    {
+        return Str::of($value);
+    }
+}
+
 if (! function_exists('is_negative')) {
     function is_negative(int|string $number): bool
     {
