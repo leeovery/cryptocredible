@@ -11,6 +11,8 @@ use App\TransactionDirector;
 use App\TransactionFactory;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use LaravelZero\Framework\Commands\Command;
 
 class SyncCoinbase extends Command
@@ -49,6 +51,9 @@ class SyncCoinbase extends Command
                 return false;
             }
         });
+
+        // Add option to dump txs rather than process (or as well as)
+        // Storage::put("/transactions.json", $this->transactions->toJson());
 
         // take collection of transactions
         // pass each one into a specific coinbase builder which will

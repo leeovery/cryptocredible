@@ -14,9 +14,10 @@ class Coinbase
 
     public function fetchAllAccounts(): Collection
     {
-        $startAfter = '91824c35-396c-5420-9d75-c334aae25f49';
+        // return $this->getAll('/accounts?limit=100')
+        //     ->mapInto(CoinbaseAccount::class);
 
-        return $this->getAll('/accounts?limit=100&starting_after='.$startAfter)
+        return $this->getAll('/accounts?limit=100&starting_after=91824c35-396c-5420-9d75-c334aae25f49')
             ->mapInto(CoinbaseAccount::class);
     }
 
@@ -41,6 +42,7 @@ class Coinbase
         }
 
         end:
+
         return $collection;
     }
 
@@ -50,10 +52,9 @@ class Coinbase
 
         return Http::baseUrl('https://api.coinbase.com/v2')
             ->contentType('application/json')
-            ->acceptJson()
             ->withHeaders($this->buildRequestHeaders('GET', $url))
             ->retry(3, 250)
-            ->timeout(10)
+            ->timeout(5)
             ->get($url);
     }
 
