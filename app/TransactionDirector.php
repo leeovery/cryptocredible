@@ -2,28 +2,28 @@
 
 namespace App;
 
-use App\Contracts\TransactionTransformer;
-use App\Exchanges\Coinbase\CoinbaseTransactionTransformer;
+use App\Contracts\TransactionBuilder;
+use App\Exchanges\Coinbase\CoinbaseTransactionBuilder;
 use Illuminate\Support\Collection;
 
 class TransactionDirector
 {
-    private TransactionTransformer $transformer;
+    private TransactionBuilder $builder;
 
     public static function coinbase(): self
     {
-        return (new self)->withTransformer(new CoinbaseTransactionTransformer);
+        return (new self)->setBuilder(new CoinbaseTransactionBuilder);
     }
 
-    public function withTransformer(TransactionTransformer $transformer): static
+    public function setBuilder(TransactionBuilder $builder): static
     {
-        $this->transformer = $transformer;
+        $this->builder = $builder;
 
         return $this;
     }
 
-    public function transform(Collection $transactions): Collection
+    public function mapCollection(Collection $transactions): Collection
     {
-        return $transactions->map(fn(array $transaction) => $this->transformer->transformer($transaction));
+        return $transactions->map(fn(array $transaction) => $this->builder->build($transaction));
     }
 }

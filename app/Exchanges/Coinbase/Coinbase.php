@@ -2,6 +2,8 @@
 
 namespace App\Exchanges\Coinbase;
 
+use App\Exchanges\Coinbase\Exceptions\CoinbaseException;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -14,35 +16,45 @@ class Coinbase
     {
         $startAfter = '91824c35-396c-5420-9d75-c334aae25f49';
 
-        return $this->getAll('/accounts?limit=100&starting_after='.$startAfter)->mapInto(CoinbaseAccount::class);
+        return $this->getAll('/accounts?limit=100&starting_after='.$startAfter)
+            ->mapInto(CoinbaseAccount::class);
     }
 
     private function getAll(string $url): Collection
     {
-        $collection = collect([]);
+        $collection = collect();
 
         while (true) {
-            $results = $this->get($url);
+            $response = $this->get($url);
+
+            throw_unless($response->successful(), CoinbaseException::requestFailed());
+            $results = $response->json();
+
+            $url = data_get($results, 'pagination.next_uri');
             if ($data = data_get($results, 'data')) {
                 $collection->push(...$data);
-                $url = data_get($results, 'pagination.next_uri');
-            } else {
-                break;
+            }
+
+            if (is_null($url)) {
+                goto end;
             }
         }
 
+        end:
         return $collection;
     }
 
-    private function get($url): array
+    private function get($url): Response
     {
         $url = Str::of($url)->remove('v2/')->start('/');
 
         return Http::baseUrl('https://api.coinbase.com/v2')
             ->contentType('application/json')
+            ->acceptJson()
             ->withHeaders($this->buildRequestHeaders('GET', $url))
-            ->get($url)
-            ->json();
+            ->retry(3, 250)
+            ->timeout(10)
+            ->get($url);
     }
 
     private function buildRequestHeaders(string $method, string $url): array

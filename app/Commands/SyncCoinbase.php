@@ -4,7 +4,9 @@ namespace App\Commands;
 
 use App\Exchanges\Coinbase\Coinbase;
 use App\Exchanges\Coinbase\CoinbaseAccount;
-use App\Exchanges\Coinbase\CoinbaseTransactionTransformer;
+use App\Exchanges\Coinbase\CoinbaseAccountCollection;
+use App\Exchanges\Coinbase\CoinbaseTransactionBuilder;
+use App\Exchanges\Coinbase\CoinbaseTransactionCollection;
 use App\TransactionDirector;
 use App\TransactionFactory;
 use Illuminate\Console\Scheduling\Schedule;
@@ -26,7 +28,6 @@ class SyncCoinbase extends Command
     public function handle(Coinbase $coinbase)
     {
         $this->coinbase = $coinbase;
-        $this->accounts = collect();
         $this->transactions = collect();
 
         $this->info('*** Coinbase connection opened ***');
@@ -35,11 +36,13 @@ class SyncCoinbase extends Command
         $this->info('Fetching transactions for:');
         $this->accounts->each(function (CoinbaseAccount $account) {
             $this->task("{$account->name()}", function () use ($account) {
+
                 $this->coinbase
                     ->fetchAllTransactions($account)
                     ->whenNotEmpty(function ($results) {
-                        $this->transactions->push(...$results->all());
+                        $this->transactions->push(...$results);
                     });
+
             });
 
             if ($this->transactions->count() > 2) {
@@ -47,7 +50,13 @@ class SyncCoinbase extends Command
             }
         });
 
-        $transactions = TransactionDirector::coinbase()->transform($this->transactions);
+        // take collection of transactions
+        // pass each one into a specific coinbase builder which will
+        // map the coinbase raw data into a local Transaction class.
+        // The director handles the mapping of the collection, passing each item
+        // into the TransactionBuilder
+
+        $transactions = TransactionDirector::coinbase()->mapCollection($this->transactions);
 
         dd($transactions);
 
