@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Exchanges\Coinbase\Mappers;
+namespace App\Exchanges\Coinbase\DataMappers;
 
 use App\Amount;
 use App\Enums\TransactionType;
 use App\Transaction;
 
-final class BuyTxMapper extends TxMapper
+final class BuyTransactionDataMapper extends TransactionDataMapper
 {
     public function execute(Transaction $transaction): Transaction
     {

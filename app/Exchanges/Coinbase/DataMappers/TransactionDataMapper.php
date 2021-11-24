@@ -1,14 +1,12 @@
 <?php
 
-namespace App\Exchanges\Coinbase\Mappers;
+namespace App\Exchanges\Coinbase\DataMappers;
 
 use App\Transaction;
 
-abstract class TxMapper
+abstract class TransactionDataMapper
 {
-    public function __construct(protected array $rawData) {
-        // dump($this->rawData);
-    }
+    public function __construct(protected array $rawData) {}
 
     abstract public function execute(Transaction $transaction): Transaction;
 

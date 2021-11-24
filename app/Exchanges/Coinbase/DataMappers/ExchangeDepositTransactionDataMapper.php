@@ -1,24 +1,23 @@
 <?php
 
-namespace App\Exchanges\Coinbase\Mappers;
+namespace App\Exchanges\Coinbase\DataMappers;
 
 use App\Amount;
 use App\Enums\TransactionType;
 use App\Transaction;
 
-final class InterestTxMapper extends TxMapper
+final class ExchangeDepositTransactionDataMapper extends TransactionDataMapper
 {
     public function execute(Transaction $transaction): Transaction
     {
         $transaction
-            ->setType(TransactionType::Income())
-            ->setBuyAmount(new Amount(
+            ->setType(TransactionType::Withdrawal())
+            ->setSellAmount(new Amount(
                 $this->getRaw('amount.amount'),
                 $this->getRaw('amount.currency')
             ))
-            ->setNotes($this->getRaw('details.header').' via '.$this->getRaw('from.name'));
+            ->setNotes('Withdrawal to Coinbase Pro');
 
         return $transaction;
     }
 }
-

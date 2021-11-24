@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Exchanges\Coinbase\Mappers;
+namespace App\Exchanges\Coinbase\DataMappers;
 
 use App\Amount;
 use App\Enums\TradeSide;
@@ -8,7 +8,7 @@ use App\Enums\TransactionType;
 use App\PartialTradeTransaction;
 use App\Transaction;
 
-final class TradeTxMapper extends TxMapper
+final class TradeTransactionDataMapper extends TransactionDataMapper
 {
     public function execute(Transaction $transaction): Transaction
     {

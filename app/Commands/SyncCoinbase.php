@@ -5,9 +5,9 @@ namespace App\Commands;
 use App\Exchanges\Coinbase\Coinbase;
 use App\Exchanges\Coinbase\CoinbaseAccount;
 use App\Exchanges\Coinbase\CoinbaseAccountCollection;
-use App\Exchanges\Coinbase\CoinbaseTransactionBuilder;
+use App\Exchanges\Coinbase\CoinbaseTransactionMapper;
 use App\Exchanges\Coinbase\CoinbaseTransactionCollection;
-use App\TransactionDirector;
+use App\TransactionManager;
 use App\TransactionFactory;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Collection;
@@ -47,10 +47,11 @@ class SyncCoinbase extends Command
 
             });
 
-            if ($this->transactions->count() > 100) {
+            if ($this->transactions->count() > 2) {
                 return false;
             }
         });
+        $this->info('--');
 
         // Add option to dump txs rather than process (or as well as)
         // Storage::put("/transactions.json", $this->transactions->toJson());
@@ -62,9 +63,17 @@ class SyncCoinbase extends Command
         // The director handles the mapping of the collection, passing each item
         // into the TransactionBuilder
 
-        $transactions = TransactionDirector::coinbase()->mapCollection($this->transactions);
+        // TransactionManager returns a director class for the exchange
+        // first step is mapping the raw data to the internal Transaction class
+        // that director then uses pipelines to pass the mapped collection
+        // through processes for getting the data into a useable format moving forward
+        // the output from this should be a completely normalised set of data ready to
+        // pass forward for further processing
 
-        dd($transactions);
+        $this->info('Normalise, match and check raw tx data:');
+        $this->transactions = TransactionManager::coinbase()->process($this->transactions);
+
+        dd('end');
 
         // normalise transactions to a standard format all exchanges can use...
 
