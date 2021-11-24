@@ -12,7 +12,7 @@ final class ExchangeDepositTxMapper extends TxMapper
     {
         $transaction
             ->setType(TransactionType::Withdrawal())
-            ->setAmount(new Amount(
+            ->setSellAmount(new Amount(
                 $this->getRaw('amount.amount'),
                 $this->getRaw('amount.currency')
             ))

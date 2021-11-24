@@ -20,7 +20,7 @@ final class SendTxMapper extends TxMapper
 
         if ($type->is(TransactionType::Withdrawal())) {
             $transaction
-                ->setAmount(new Amount(
+                ->setSellAmount(new Amount(
                     $this->getRaw('network.transaction_amount.amount'),
                     $this->getRaw('network.transaction_amount.currency')
                 ))
@@ -29,7 +29,7 @@ final class SendTxMapper extends TxMapper
                     $this->getRaw('network.transaction_fee.currency')
                 ));
         } else {
-            $transaction->setAmount(new Amount(
+            $transaction->setBuyAmount(new Amount(
                 $this->getRaw('amount.amount'),
                 $this->getRaw('amount.currency')
             ));

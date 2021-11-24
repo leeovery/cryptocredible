@@ -47,7 +47,7 @@ class SyncCoinbase extends Command
 
             });
 
-            if ($this->transactions->count() > 10) {
+            if ($this->transactions->count() > 100) {
                 return false;
             }
         });

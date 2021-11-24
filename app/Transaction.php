@@ -9,17 +9,19 @@ class Transaction
 {
     public TransactionType $type;
 
-    public Amount $amount;
+    public ?Amount $buyAmount = null;
 
-    public Amount $fee;
+    public ?Amount $sellAmount = null;
+
+    public ?Amount $fee = null;
 
     public string $id;
 
     public string $status;
 
-    public ?string $txHash;
+    public ?string $txHash = null;
 
-    public ?string $txUrl;
+    public ?string $txUrl = null;
 
     public string $notes;
 
@@ -34,9 +36,16 @@ class Transaction
         return $this;
     }
 
-    public function setAmount($amount): static
+    public function setSellAmount(Amount $sellAmount): static
     {
-        $this->amount = $amount;
+        $this->sellAmount = $sellAmount;
+
+        return $this;
+    }
+
+    public function setBuyAmount(Amount $buyAmount): static
+    {
+        $this->buyAmount = $buyAmount;
 
         return $this;
     }

@@ -6,19 +6,15 @@ use App\Amount;
 use App\Enums\TransactionType;
 use App\Transaction;
 
-final class FiatDepositTxMapper extends TxMapper
+final class ProDepositTxMapper extends TxMapper
 {
     public function execute(Transaction $transaction): Transaction
     {
         $transaction
-            ->setType(TransactionType::Deposit())
-            ->setBuyAmount(new Amount(
+            ->setType(TransactionType::Withdrawal())
+            ->setSellAmount(new Amount(
                 $this->getRaw('amount.amount'),
                 $this->getRaw('amount.currency')
-            ))
-            ->setFee(new Amount(
-                $this->getRaw('fiat_deposit.fee.amount'),
-                $this->getRaw('fiat_deposit.fee.currency')
             ))
             ->setNotes($this->getRaw('details.title').' '.$this->getRaw('details.subtitle'));
 

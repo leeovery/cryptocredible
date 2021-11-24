@@ -12,7 +12,7 @@ final class ProWithdrawalTxMapper extends TxMapper
     {
         $transaction
             ->setType(TransactionType::Deposit())
-            ->setAmount(new Amount(
+            ->setBuyAmount(new Amount(
                 $this->getRaw('amount.amount'),
                 $this->getRaw('amount.currency')
             ))
