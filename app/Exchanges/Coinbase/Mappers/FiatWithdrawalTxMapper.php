@@ -4,7 +4,7 @@ namespace App\Exchanges\Coinbase\Mappers;
 
 use App\Transaction;
 
-final class ExchangeWithdrawalTxMapper extends TxMapper
+final class FiatWithdrawalTxMapper extends TxMapper
 {
     public function execute(Transaction $transaction): Transaction
     {

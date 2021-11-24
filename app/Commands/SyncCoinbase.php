@@ -47,13 +47,14 @@ class SyncCoinbase extends Command
 
             });
 
-            if ($this->transactions->count() > 2) {
+            if ($this->transactions->count() > 10) {
                 return false;
             }
         });
 
         // Add option to dump txs rather than process (or as well as)
         // Storage::put("/transactions.json", $this->transactions->toJson());
+        // dd();
 
         // take collection of transactions
         // pass each one into a specific coinbase builder which will

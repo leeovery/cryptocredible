@@ -8,12 +8,14 @@ use App\Exchanges\Coinbase\Mappers\BuyTxMapper;
 use App\Exchanges\Coinbase\Mappers\ExchangeDepositTxMapper;
 use App\Exchanges\Coinbase\Mappers\ExchangeWithdrawalTxMapper;
 use App\Exchanges\Coinbase\Mappers\FiatDepositTxMapper;
-use App\Exchanges\Coinbase\Mappers\FiatWithdrawlTxMapper;
+use App\Exchanges\Coinbase\Mappers\FiatWithdrawalTxMapper;
 use App\Exchanges\Coinbase\Mappers\ProWithdrawalTxMapper;
 use App\Exchanges\Coinbase\Mappers\SellTxMapper;
 use App\Exchanges\Coinbase\Mappers\SendTxMapper;
 use App\Exchanges\Coinbase\Mappers\TradeTxMapper;
+use App\Exchanges\Coinbase\Mappers\TxMapper;
 use App\Transaction;
+use Illuminate\Support\Carbon;
 
 class CoinbaseTransactionBuilder implements TransactionBuilder
 {
@@ -25,29 +27,19 @@ class CoinbaseTransactionBuilder implements TransactionBuilder
 
         // dd($rawTxData);
 
-        $lookup = [
-            // 'buy'                 => BuyTxMapper::class,
-            // 'sell'                => SellTxMapper::class,
-            // 'trade'               => TradeTxMapper::class,
-            'send'                => SendTxMapper::class,
-            // 'pro_withdrawal'      => ProWithdrawalTxMapper::class,
-            // 'exchange_deposit'    => ExchangeDepositTxMapper::class,
-            // 'exchange_withdrawal' => ExchangeWithdrawalTxMapper::class,
-            // 'fiat_deposit'        => FiatDepositTxMapper::class,
-            // 'fiat_withdrawal'     => FiatWithdrawlTxMapper::class,
-        ];
+        // pending object has all the fluent setters for building out the tx.
+        // Create method is finally called back here on building, and PTx builds
+        // out the TX using its own data
 
-        $transaction = new Transaction();
-        /** @var \App\Exchanges\Coinbase\Mappers\TxMapper $mapper */
-        $mapper = new $lookup[$rawTxData['type']]($rawTxData, $transaction);
-        $transaction = $mapper->execute();
+        // or just put setters on TX itself. builder + mapper know how to get data from raw,
+        // and will construct TX and return.
+        $transaction = (new Transaction)
+            ->setRawData($this->rawData)
+            ->setId($this->getRaw('id'))
+            ->setStatus($this->getRaw('status'))
+            ->setTxDate(Carbon::make($this->getRaw('created_at')));
 
-        dd($transaction);
-
-        // $transaction = (new Transaction)
-        //     ->setType($this->calculateTxType())
-        //     ->setAmount()
-        //     ->setFee();
+        $transaction = $this->getMapperForTxType()->execute($transaction);
 
         // THOUGHTS....
         // * do we need to check status??
@@ -90,19 +82,37 @@ class CoinbaseTransactionBuilder implements TransactionBuilder
         // tx url - network.transaction_url - not always present
         // notes - details.header + details.subtitle
 
-        dd($transaction);
-
         return $transaction;
     }
 
-    private function getRawData($key = null): mixed
+    private function getMapperForTxType(): TxMapper
+    {
+        $lookup = [
+            // 'buy'                 => BuyTxMapper::class,
+            // 'sell'                => SellTxMapper::class,
+            'trade'               => TradeTxMapper::class,
+            'send'                => SendTxMapper::class,
+            'pro_withdrawal'      => ProWithdrawalTxMapper::class,
+            'exchange_deposit'    => ExchangeDepositTxMapper::class,
+            // 'exchange_withdrawal' => ExchangeWithdrawalTxMapper::class,
+            // 'fiat_deposit'        => FiatDepositTxMapper::class,
+            // 'fiat_withdrawal'     => FiatWithdrawalTxMapper::class,
+        ];
+
+        $type = $this->getRaw('type');
+        $mapper = $lookup[$type] ?? abort(400, "No matching tx mapper found for coinbase tx type '{$type}'.");
+
+        return new $mapper($this->getRaw());
+    }
+
+    private function getRaw($key = null): mixed
     {
         return data_get($this->rawData, $key);
     }
 
     private function calculateTxType(): TransactionType
     {
-        switch ($this->getRawData('type')) {
+        switch ($this->getRaw('type')) {
             case 'buy':
             case 'sell':
             case 'trade':
@@ -110,22 +120,6 @@ class CoinbaseTransactionBuilder implements TransactionBuilder
                 // sell = crypto to fiat trade
                 // crypto to crypto trade
                 return TransactionType::Trade();
-            case 'send':
-                $fromName = $this->getRawData('from.name');
-                if ($fromName && str($fromName)->lower()->contains('coinbase earn')) {
-                    return TransactionType::Income();
-                }
-
-                $description = $this->getRawData('description');
-                if ($description && str($description)->lower()->contains('earn task')) {
-                    return TransactionType::Income();
-                }
-
-                if (is_negative($this->getRawData('amount.amount'))) {
-                    return TransactionType::Withdrawal();
-                }
-
-                return TransactionType::Deposit();
             case 'pro_withdrawal':
                 // deposit from coinbase pro
                 return TransactionType::Deposit();
