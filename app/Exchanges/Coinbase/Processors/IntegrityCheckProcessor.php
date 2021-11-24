@@ -7,8 +7,10 @@ use Illuminate\Support\Collection;
 
 class IntegrityCheckProcessor implements TransactionProcessor
 {
-    public function handle(Collection $transactions): Collection
+    public function handle(Collection $transactions, callable $next): Collection
     {
-        // TODO: Implement handle() method.
+        // TODO
+
+        return $next($transactions);
     }
 }

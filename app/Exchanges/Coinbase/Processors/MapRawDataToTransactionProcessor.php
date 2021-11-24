@@ -34,23 +34,26 @@ class MapRawDataToTransactionProcessor implements TransactionProcessor
         'interest'            => InterestTransactionDataMapper::class,
     ];
 
-    public function handle(Collection $transactions): Collection
+    public function handle(Collection $transactions, callable $next): Collection
     {
         // THOUGHTS....
         // * do we need to check status??
         // * get payment methods to know when crypto has been purchased with a debit card, so we can
         //   create a fiat deposit to balance things.
 
-        return $transactions->map(function (array $transaction) {
-            return with($this->getMapper(data_get($transaction, 'type')), function (string $mapper) use ($transaction) {
-                return new $mapper($transaction);
-            })->execute((new Transaction)
-                ->setRawData($transaction)
-                ->setId(data_get($transaction, 'id'))
-                ->setStatus(data_get($transaction, 'status'))
-                ->setTxDate(Carbon::make(data_get($transaction, 'created_at')))
-            );
-        });
+        return $next(
+            $transactions->map(function (array $transaction) {
+                return with($this->getMapper(data_get($transaction, 'type')),
+                    function (string $mapper) use ($transaction) {
+                        return new $mapper($transaction);
+                    })->execute((new Transaction)
+                    ->setRawData($transaction)
+                    ->setId(data_get($transaction, 'id'))
+                    ->setStatus(data_get($transaction, 'status'))
+                    ->setTxDate(Carbon::make(data_get($transaction, 'created_at')))
+                );
+            })
+        );
     }
 
     private function getMapper(string $type): string

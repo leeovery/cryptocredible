@@ -15,7 +15,7 @@ class CoinbaseTransactionDirector implements TransactionDirector
     private array $processors = [
         MapRawDataToTransactionProcessor::class,
         MatchPartialTransactionsProcessor::class,
-        // IntegrityCheckProcessor::class,
+        IntegrityCheckProcessor::class,
     ];
 
     public function process(Collection $transactions): Collection

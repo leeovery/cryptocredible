@@ -34,6 +34,7 @@ class SyncCoinbase extends Command
 
         $this->info('*** Coinbase connection opened ***');
         $this->accounts = $this->coinbase->fetchAllAccounts();
+        $this->info('');
 
         $this->info('Fetching transactions for:');
         $this->accounts->each(function (CoinbaseAccount $account) {
@@ -47,11 +48,11 @@ class SyncCoinbase extends Command
 
             });
 
-            if ($this->transactions->count() > 2) {
+            if ($this->transactions->count() > 100) {
                 return false;
             }
         });
-        $this->info('--');
+        $this->info('');
 
         // Add option to dump txs rather than process (or as well as)
         // Storage::put("/transactions.json", $this->transactions->toJson());
@@ -63,27 +64,13 @@ class SyncCoinbase extends Command
         // The director handles the mapping of the collection, passing each item
         // into the TransactionBuilder
 
-        // TransactionManager returns a director class for the exchange
-        // first step is mapping the raw data to the internal Transaction class
-        // that director then uses pipelines to pass the mapped collection
-        // through processes for getting the data into a useable format moving forward
-        // the output from this should be a completely normalised set of data ready to
-        // pass forward for further processing
-
         $this->info('Normalise, match and check raw tx data:');
         $this->transactions = TransactionManager::coinbase()->process($this->transactions);
+        $this->info('');
 
-        dd('end');
+        dd($this->transactions->count());
 
         // normalise transactions to a standard format all exchanges can use...
-
-        // transactions types
-        // send
-        // - positive amount.amount === deposit
-        // - negative amount.amount === withdrawal
-
-        // exchange_deposit
-        // - neg. amount.amount = withdrawal to coinbase pro? or any exchange?
     }
 
     public function schedule(Schedule $schedule): void
