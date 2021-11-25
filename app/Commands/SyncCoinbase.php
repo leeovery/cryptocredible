@@ -2,15 +2,14 @@
 
 namespace App\Commands;
 
-use App\Enums\TransactionType;
 use App\Exchanges\Coinbase\Coinbase;
 use App\Exchanges\Coinbase\CoinbaseAccount;
-use App\Transaction;
 use App\TransactionManager;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use LaravelZero\Framework\Commands\Command;
+use League\Csv\Writer;
 
 class SyncCoinbase extends Command
 {
@@ -70,12 +69,20 @@ class SyncCoinbase extends Command
         $this->transactions = TransactionManager::coinbase()->process($this->transactions);
         $this->newLine();
 
-        dd($this->transactions[486]);
-        dd($this->transactions->filter(function(Transaction $transaction) {
-            return $transaction->type->is(TransactionType::Trade());
-        }));
+        $header = ['id'];
 
-        // normalise transactions to a standard format all exchanges can use...
+        //load the CSV document from a string
+        $csv = Writer::createFromString();
+        //insert all the records
+        $csv->insertOne($header);
+        $csv->insertOne([
+            'id' => $this->transactions[0]->id,
+        ]);
+        $csv->insertOne([
+            'id' => $this->transactions[1]->id,
+        ]);
+
+        dd($csv->toString());
     }
 
     public function schedule(Schedule $schedule): void

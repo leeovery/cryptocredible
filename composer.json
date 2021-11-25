@@ -21,7 +21,8 @@
         "guzzlehttp/guzzle": "^7.4",
         "illuminate/http": "^8.0",
         "laminas/laminas-text": "^2.8",
-        "laravel-zero/framework": "^8.8"
+        "laravel-zero/framework": "^8.8",
+        "league/csv": "^9.7"
     },
     "require-dev": {
         "mockery/mockery": "^1.4.3",
