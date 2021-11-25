@@ -2,22 +2,21 @@
 
 namespace App\Commands;
 
+use App\Enums\TransactionType;
 use App\Exchanges\Coinbase\Coinbase;
 use App\Exchanges\Coinbase\CoinbaseAccount;
-use App\Exchanges\Coinbase\CoinbaseAccountCollection;
-use App\Exchanges\Coinbase\CoinbaseTransactionMapper;
-use App\Exchanges\Coinbase\CoinbaseTransactionCollection;
+use App\Transaction;
 use App\TransactionManager;
-use App\TransactionFactory;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use LaravelZero\Framework\Commands\Command;
 
 class SyncCoinbase extends Command
 {
-    protected $signature = 'sync:coinbase';
+    protected $signature = 'sync:coinbase
+                            {--j|json= : Provide a json file rather than fetch txs via api.}
+                            {--dump-json : Dump all the transactions fetched via the api into a json file.}';
 
     protected $description = 'Command description';
 
@@ -29,46 +28,52 @@ class SyncCoinbase extends Command
 
     public function handle(Coinbase $coinbase)
     {
+        $this->newLine();
+        $this->info('*** Coinbase ***');
+        $this->newLine(2);
+
         $this->coinbase = $coinbase;
         $this->transactions = collect();
 
-        $this->info('*** Coinbase connection opened ***');
-        $this->accounts = $this->coinbase->fetchAllAccounts();
-        $this->info('');
+        if (! is_null($this->option('json'))) {
+            $this->info('Using provided json file for tx list...');
+            $this->transactions = collect(json_decode(Storage::get("/transactions.json"), true));
+        } else {
+            $this->info('Coinbase connection opened...');
+            $this->accounts = $this->coinbase->fetchAllAccounts();
+            $this->newLine();
 
-        $this->info('Fetching transactions for:');
-        $this->accounts->each(function (CoinbaseAccount $account) {
-            $this->task("{$account->name()}", function () use ($account) {
+            $this->info('Fetching transactions for:');
+            $this->accounts->each(function (CoinbaseAccount $account) {
+                $this->task("{$account->name()}", function () use ($account) {
 
-                $this->coinbase
-                    ->fetchAllTransactions($account)
-                    ->whenNotEmpty(function ($results) {
-                        $this->transactions->push(...$results);
-                    });
+                    $this->coinbase
+                        ->fetchAllTransactions($account)
+                        ->whenNotEmpty(function ($results) {
+                            $this->transactions->push(...$results);
+                        });
 
+                });
+
+                // if ($this->transactions->count() > 200) {
+                //     return false;
+                // }
             });
+            $this->newLine();
 
-            if ($this->transactions->count() > 100) {
-                return false;
+            if ($this->option('dump-json')) {
+                Storage::put("/transactions.json", $this->transactions->toJson());
             }
-        });
-        $this->info('');
-
-        // Add option to dump txs rather than process (or as well as)
-        // Storage::put("/transactions.json", $this->transactions->toJson());
-        // dd();
-
-        // take collection of transactions
-        // pass each one into a specific coinbase builder which will
-        // map the coinbase raw data into a local Transaction class.
-        // The director handles the mapping of the collection, passing each item
-        // into the TransactionBuilder
+        }
 
         $this->info('Normalise, match and check raw tx data:');
         $this->transactions = TransactionManager::coinbase()->process($this->transactions);
-        $this->info('');
+        $this->newLine();
 
-        dd($this->transactions->count());
+        dd($this->transactions[486]);
+        dd($this->transactions->filter(function(Transaction $transaction) {
+            return $transaction->type->is(TransactionType::Trade());
+        }));
 
         // normalise transactions to a standard format all exchanges can use...
     }

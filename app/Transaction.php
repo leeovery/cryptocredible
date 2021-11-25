@@ -27,7 +27,7 @@ class Transaction
 
     public array $rawData;
 
-    protected ?Carbon $txDate;
+    public ?Carbon $txDate;
 
     public function setType(TransactionType $type): static
     {

@@ -14,11 +14,7 @@ class Coinbase
 
     public function fetchAllAccounts(): Collection
     {
-        // return $this->getAll('/accounts?limit=100')
-        //     ->mapInto(CoinbaseAccount::class);
-
-        return $this->getAll('/accounts?limit=100&starting_after=91824c35-396c-5420-9d75-c334aae25f49')
-            ->mapInto(CoinbaseAccount::class);
+        return $this->getAll('/accounts?limit=100')->mapInto(CoinbaseAccount::class);
     }
 
     private function getAll(string $url): Collection

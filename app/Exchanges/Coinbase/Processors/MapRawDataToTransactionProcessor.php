@@ -14,6 +14,7 @@ use App\Exchanges\Coinbase\DataMappers\ProWithdrawalTransactionDataMapper;
 use App\Exchanges\Coinbase\DataMappers\SellTransactionDataMapper;
 use App\Exchanges\Coinbase\DataMappers\SendTransactionDataMapper;
 use App\Exchanges\Coinbase\DataMappers\TradeTransactionDataMapper;
+use App\Exchanges\Coinbase\DataMappers\TransactionDataMapper;
 use App\Transaction;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -43,10 +44,7 @@ class MapRawDataToTransactionProcessor implements TransactionProcessor
 
         return $next(
             $transactions->map(function (array $transaction) {
-                return with($this->getMapper(data_get($transaction, 'type')),
-                    function (string $mapper) use ($transaction) {
-                        return new $mapper($transaction);
-                    })->execute((new Transaction)
+                return $this->getMapper($transaction)->execute((new Transaction)
                     ->setRawData($transaction)
                     ->setId(data_get($transaction, 'id'))
                     ->setStatus(data_get($transaction, 'status'))
@@ -56,9 +54,13 @@ class MapRawDataToTransactionProcessor implements TransactionProcessor
         );
     }
 
-    private function getMapper(string $type): string
+    private function getMapper(array $transaction): TransactionDataMapper
     {
-        return $this->dataMappers[$type]
+        $type = data_get($transaction, 'type');
+
+        $mapper = $this->dataMappers[$type]
             ?? abort(400, "No matching tx mapper found for coinbase tx type '{$type}'.");
+
+        return new $mapper($transaction);
     }
 }
