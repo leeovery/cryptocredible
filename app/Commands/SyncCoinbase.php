@@ -4,6 +4,8 @@ namespace App\Commands;
 
 use App\Exchanges\Coinbase\Coinbase;
 use App\Exchanges\Coinbase\CoinbaseAccount;
+use App\OutputManager;
+use App\Transaction;
 use App\TransactionManager;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Collection;
@@ -45,18 +47,12 @@ class SyncCoinbase extends Command
             $this->info('Fetching transactions for:');
             $this->accounts->each(function (CoinbaseAccount $account) {
                 $this->task("{$account->name()}", function () use ($account) {
-
                     $this->coinbase
                         ->fetchAllTransactions($account)
                         ->whenNotEmpty(function ($results) {
                             $this->transactions->push(...$results);
                         });
-
                 });
-
-                // if ($this->transactions->count() > 200) {
-                //     return false;
-                // }
             });
             $this->newLine();
 
@@ -69,20 +65,7 @@ class SyncCoinbase extends Command
         $this->transactions = TransactionManager::coinbase()->process($this->transactions);
         $this->newLine();
 
-        $header = ['id'];
-
-        //load the CSV document from a string
-        $csv = Writer::createFromString();
-        //insert all the records
-        $csv->insertOne($header);
-        $csv->insertOne([
-            'id' => $this->transactions[0]->id,
-        ]);
-        $csv->insertOne([
-            'id' => $this->transactions[1]->id,
-        ]);
-
-        dd($csv->toString());
+        OutputManager::run($this->transactions);
     }
 
     public function schedule(Schedule $schedule): void
