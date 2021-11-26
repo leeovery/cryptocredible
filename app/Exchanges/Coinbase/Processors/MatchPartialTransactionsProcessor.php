@@ -10,52 +10,6 @@ use App\PartialTradeTransaction as Partial;
 use App\Transaction;
 use Illuminate\Support\Collection;
 
-/**
- *
- * use App\Exchanges\Coinbase\Processors\MatchPartialTransactionsProcessor;
- * use App\Amount;
- * use App\Enums\TradeSide;
- * use App\Enums\TransactionType;
- * use App\PartialTradeTransaction;
- * use App\Transaction;
- * use Illuminate\Support\Carbon;
- *
- * $processor = resolve(MatchPartialTransactionsProcessor::class);
- *
- * $processor->handle(
- * collect([
- * new Transaction(),
- * new Transaction(),
- * new Transaction(),
- * new Transaction(),
- * new Transaction(),
- * new Transaction(),
- * new Transaction(),
- * new Transaction(),
- *
- * (new PartialTradeTransaction())
- * ->setId('7a392510-a2ea-510c-9743-dca2c0bd04e9')
- * ->setStatus('completed')
- * ->setTxDate(Carbon::make('2021-09-16T18:40:01Z'))
- * ->setType(TransactionType::Trade())
- * ->setFee(new Amount('0.00000000', 'ETH'))
- * ->setBuyAmount(new Amount('0.00080412', 'ETH'))
- * ->setMatchableId('a596154d-94df-473a-b537-21bd7d468485')
- * ->setTradeSide(TradeSide::Buy()),
- *
- * (new \App\PartialTradeTransaction())
- * ->setId('d9baa033-7492-5f94-9dbb-910888534a6f')
- * ->setStatus('completed')
- * ->setTxDate(Carbon::make('2021-09-16T18:40:02Z'))
- * ->setType(TransactionType::Trade())
- * ->setFee(new Amount('0.00000000', 'ETH'))
- * ->setSellAmount(new Amount('0.11347883', 'BOND'))
- * ->setMatchableId('a596154d-94df-473a-b537-21bd7d468485')
- * ->setTradeSide(TradeSide::Sell()),
- * ]),
- * function () {}
- * );
- */
 class MatchPartialTransactionsProcessor implements TransactionProcessor
 {
     public function handle(Collection $transactions, callable $next): Collection

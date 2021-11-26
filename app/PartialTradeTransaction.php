@@ -2,15 +2,14 @@
 
 namespace App;
 
-use App\Enums\TransactionType;
-use Illuminate\Support\Carbon;
+use App\Enums\TradeSide;
 use JetBrains\PhpStorm\Pure;
 
 class PartialTradeTransaction extends Transaction
 {
     public string $matchableId;
 
-    public Enums\TradeSide $tradeSide;
+    public TradeSide $tradeSide;
 
     #[Pure]
     public static function createFromTransaction(Transaction $transaction): static

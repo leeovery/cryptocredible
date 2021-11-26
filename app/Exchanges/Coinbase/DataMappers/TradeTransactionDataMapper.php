@@ -12,30 +12,32 @@ final class TradeTransactionDataMapper extends TransactionDataMapper
 {
     public function execute(Transaction $transaction): Transaction
     {
-        $transaction
+        $transaction = PartialTradeTransaction::createFromTransaction($transaction)
             ->setType(TransactionType::Trade())
             ->setFee(new Amount(
                 $this->getRaw('trade.fee.amount'),
                 $this->getRaw('trade.fee.currency')
             ))
+            ->setMatchableId($this->getRaw('trade.idem'))
             ->setNotes($this->getRaw('details.header').' '.$this->getRaw('details.subtitle'));
 
-        $tradedAmount = new Amount(
-            $this->getRaw('amount.amount'),
-            $this->getRaw('amount.currency')
-        );
-        $tradeSide = is_negative($this->getRaw('amount.amount'))
-            ? TradeSide::Sell()
-            : TradeSide::Buy();
+        $amount = new Amount($this->getRaw('amount.amount'), $this->getRaw('amount.currency'));
 
-        if ($tradeSide->is(TradeSide::Buy())) {
-            $transaction->setBuyAmount($tradedAmount);
+        if ($this->isSellSide()) {
+            $transaction
+                ->setTradeSide(TradeSide::Sell())
+                ->setSellAmount($amount);
         } else {
-            $transaction->setSellAmount($tradedAmount);
+            $transaction
+                ->setTradeSide(TradeSide::Buy())
+                ->setBuyAmount($amount);
         }
 
-        return PartialTradeTransaction::createFromTransaction($transaction)
-            ->setTradeSide($tradeSide)
-            ->setMatchableId($this->getRaw('trade.idem'));
+        return $transaction;
+    }
+
+    private function isSellSide(): bool
+    {
+        return is_negative($this->getRaw('amount.amount'));
     }
 }

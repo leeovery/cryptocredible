@@ -37,7 +37,7 @@ class MapRawDataToTransactionProcessor implements TransactionProcessor
 
     public function handle(Collection $transactions, callable $next): Collection
     {
-        // THOUGHTS....
+        // TODO
         // * do we need to check status??
         // * get payment methods to know when crypto has been purchased with a debit card, so we can
         //   create a fiat deposit to balance things.
