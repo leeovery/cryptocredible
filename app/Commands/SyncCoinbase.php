@@ -8,15 +8,14 @@ use App\OutputManager;
 use App\TransactionManager;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Storage;
 use LaravelZero\Framework\Commands\Command;
 
 class SyncCoinbase extends Command
 {
     protected $signature = 'sync:coinbase
-                            {--o|output-dir=./ : Provide a dir on local file system to output csv to.}
+                            {--o|output-dir=./../ : Provide a dir on local file system to output csv to.}
                             {--j|json= : Provide a json file rather than fetch txs via api.}
-                            {--dump-json : Dump all the transactions fetched via the api into a json file.}';
+                            {--dump : Dump all the transactions fetched via the api into a json file.}';
 
     protected $description = 'Command description';
 
@@ -32,21 +31,27 @@ class SyncCoinbase extends Command
         $this->info('**********************');
         $this->newLine();
 
-        $transactions = $this->fetchTransactions();
-        $this->newLine();
+        $this->processTransactions(
+            $this->fetchTransactions()
+        );
 
+        $this->info('Output successful ✅');
+    }
+
+    public function processTransactions(Collection $transactions): void
+    {
         $this->info('Process transactions...');
-
+        $this->task('Normalise data & match up trades', function () use (&$transactions) {
+            $transactions = TransactionManager::coinbase()->process($transactions);
+        });
         $this->task('Output data', function () use ($transactions) {
             OutputManager::run(
-                TransactionManager::coinbase()->process($transactions),
+                $transactions,
                 'Coinbase',
                 $this->option('output-dir')
             );
         });
         $this->newLine();
-
-        $this->info('Done ✅');
     }
 
     private function fetchTransactions(): Collection
@@ -55,13 +60,15 @@ class SyncCoinbase extends Command
         $transactions = collect();
 
         if (! is_null($this->option('json'))) {
-            $this->task('Using provided json file for tx list', function () use (&$transactions) {
+            $this->task('Use provided json file', function () use (&$transactions) {
                 $transactions = collect(json_decode(file_get_contents($this->option('json')), true));
             });
 
             if ($transactions->isEmpty()) {
                 abort(404, 'No transactions found in the provided file.');
             }
+
+            $this->newLine();
 
             return $transactions;
         }
@@ -72,21 +79,31 @@ class SyncCoinbase extends Command
         });
 
         $this->line('Fetch transactions for:');
-        $accounts->each(function (CoinbaseAccount $account) use ($transactions) {
-            $this->task("    {$account->name()}", function () use ($transactions, $account) {
-                return $this->coinbase
-                    ->fetchAllTransactions($account)
-                    ->whenNotEmpty(function ($results) use ($transactions) {
-                        $transactions->push(...$results);
-                    });
-            });
-        });
+        $transactions = $accounts->flatMap(function (CoinbaseAccount $account) {
+            $transactions = collect();
+            $this->task("    {$account->name()}", function () use ($account, &$transactions) {
+                $transactions = $this->coinbase->fetchAllTransactions($account);
+            }, 'fetching...');
 
-        if ($this->option('dump-json')) {
-            Storage::put("/transactions.json", $transactions->toJson());
-        }
+            return $transactions;
+        })->filter();
+
+        $this->dumpTransactionsToFile($transactions);
+
+        $this->newLine();
 
         return $transactions;
+    }
+
+    private function dumpTransactionsToFile(Collection $transactions): void
+    {
+        if ($this->option('dump')) {
+            $this->line('Dump transactions to file option provided...');
+            $outputDir = str($this->option('output-dir'))->finish('/')->append('coinbase-transactions.json');
+            $this->task("Dumping data to {$outputDir}", function () use ($outputDir, $transactions) {
+                file_put_contents($outputDir, $transactions->toJson());
+            });
+        }
     }
 
     public function schedule(Schedule $schedule): void

@@ -4,5 +4,4 @@
 /.vagrant
 .phpunit.result.cache
 .env
-/storage/transactions.json
 .DS_Store
