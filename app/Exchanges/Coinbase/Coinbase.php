@@ -72,4 +72,9 @@ class Coinbase
     {
         return $this->getAll("{$account->resourcePath()}/transactions?expand=all&limit=100");
     }
+
+    public function fetchPaymentMethods(): Collection
+    {
+        return $this->getAll('/payment-methods?limit=100');
+    }
 }

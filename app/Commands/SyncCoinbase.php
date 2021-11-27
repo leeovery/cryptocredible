@@ -2,9 +2,10 @@
 
 namespace App\Commands;
 
-use App\Exchanges\Coinbase\Coinbase;
 use App\Exchanges\Coinbase\CoinbaseAccount;
+use App\Exchanges\Coinbase\Facades\Coinbase;
 use App\OutputManager;
+use App\Transaction;
 use App\TransactionManager;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Collection;
@@ -19,12 +20,8 @@ class SyncCoinbase extends Command
 
     protected $description = 'Fetch, process and output all Coinbase transactions in a format suitable for processing with BittyTax.';
 
-    protected Coinbase $coinbase;
-
-    public function handle(Coinbase $coinbase)
+    public function handle()
     {
-        $this->coinbase = $coinbase;
-
         $this->newLine();
         $this->info('**********************');
         $this->info('****** Coinbase ******');
@@ -41,9 +38,15 @@ class SyncCoinbase extends Command
     public function processTransactions(Collection $transactions): void
     {
         $this->info('Process transactions...');
+
         $this->task('Normalise data & match up trades', function () use (&$transactions) {
             $transactions = TransactionManager::coinbase()->process($transactions);
         });
+
+        // dd($transactions->first(function(Transaction $transaction) {
+        //     return str($transaction->notes)->contains('Auto-created deposit linked to tx');
+        // }));
+
         $this->task('Output data', function () use ($transactions) {
             OutputManager::run(
                 $transactions,
@@ -75,14 +78,14 @@ class SyncCoinbase extends Command
 
         $accounts = collect();
         $this->task('Open Coinbase connection', function () use (&$accounts) {
-            $accounts = $this->coinbase->fetchAllAccounts();
+            $accounts = Coinbase::fetchAllAccounts();
         });
 
         $this->line('Fetch transactions for:');
         $transactions = $accounts->flatMap(function (CoinbaseAccount $account) {
             $transactions = collect();
             $this->task("    {$account->name()}", function () use ($account, &$transactions) {
-                $transactions = $this->coinbase->fetchAllTransactions($account);
+                $transactions = Coinbase::fetchAllTransactions($account);
             }, 'fetching...');
 
             return $transactions;

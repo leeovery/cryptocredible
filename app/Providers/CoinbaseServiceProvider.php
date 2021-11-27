@@ -14,7 +14,7 @@ class CoinbaseServiceProvider extends ServiceProvider
 
     public function register()
     {
-        $this->app->bind(Coinbase::class, function () {
+        $this->app->singleton(Coinbase::class, function () {
             $config = config('exchanges.coinbase');
 
             return new Coinbase(
@@ -22,5 +22,7 @@ class CoinbaseServiceProvider extends ServiceProvider
                 apiSecret: $config['api_secret']
             );
         });
+
+        $this->app->alias(Coinbase::class, 'coinbase');
     }
 }

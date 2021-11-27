@@ -3,7 +3,7 @@
 namespace App\Exchanges\Coinbase;
 
 use App\Contracts\TransactionDirector;
-use App\Exchanges\Coinbase\Processors\FindDebitCardTradesAndAddFakeFiatDeposit;
+use App\Exchanges\Coinbase\Processors\CreateFiatDepositsForCardPurchasesProcessor;
 use App\Exchanges\Coinbase\Processors\MapRawDataToTransactionProcessor;
 use App\Exchanges\Coinbase\Processors\MatchPartialTransactionsProcessor;
 use Illuminate\Pipeline\Pipeline;
@@ -15,7 +15,7 @@ class CoinbaseTransactionDirector implements TransactionDirector
     private array $processors = [
         MapRawDataToTransactionProcessor::class,
         MatchPartialTransactionsProcessor::class,
-        FindDebitCardTradesAndAddFakeFiatDeposit::class,
+        CreateFiatDepositsForCardPurchasesProcessor::class,
     ];
 
     public function process(Collection $transactions): Collection

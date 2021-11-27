@@ -45,7 +45,7 @@ class MatchPartialTransactionsProcessor implements TransactionProcessor
         });
 
         $expectedFinalCount = $transactions->count() + ($partialsTotalCount / 2);
-        $transactions = $transactions->union($partials)->values();
+        $transactions = $transactions->push(...$partials)->values();
 
         throw_unless(
             $transactions->count() === $expectedFinalCount,

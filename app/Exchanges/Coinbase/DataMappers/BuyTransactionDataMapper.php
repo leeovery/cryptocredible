@@ -10,15 +10,6 @@ final class BuyTransactionDataMapper extends TransactionDataMapper
 {
     public function execute(Transaction $transaction): Transaction
     {
-        // BUY
-        // * fiat to crypto trade
-        //      - fee - buy.fee
-        //      - purchased with asset amount (net of fee) = buy.subtotal
-        //      - purchase asset amount = buy.amount
-        //      - if using debit card (or non coinbase fiat wallet) then we need to create a
-        //      - fiat deposit to match the fee + total (i.e. excluding payment method fee) with a note
-        //      - in the note col stating the payment method fee and that this was a debit card purchase
-
         $transaction
             ->setType(TransactionType::Trade())
             ->setBuyAmount(new Amount(
