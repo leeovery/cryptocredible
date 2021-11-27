@@ -42,14 +42,11 @@ class SyncCoinbase extends Command
         $this->task('Normalise data & match up trades', function () use (&$transactions) {
             $transactions = TransactionManager::coinbase()->process($transactions);
         });
-        
+
         $this->task('Output data', function () use ($transactions) {
-            OutputManager::run(
-                $transactions,
-                'Coinbase',
-                $this->option('output-dir')
-            );
+            OutputManager::run($transactions, 'Coinbase', $this->option('output-dir'));
         });
+
         $this->newLine();
     }
 
