@@ -7,7 +7,7 @@ use League\Csv\Writer;
 
 class OutputManager
 {
-    public static function run(Collection $transactions)
+    public static function run(Collection $transactions, string $walletName, string $outputDir)
     {
         $transactions = $transactions
             ->sortBy(fn(Transaction $transaction) => $transaction->txDate->timestamp)
@@ -22,7 +22,7 @@ class OutputManager
                 $transaction->fee?->value ?? '',
                 $transaction->fee?->currency ?? '',
                 '',
-                'Coinbase',
+                $walletName,
                 $transaction->txDate->utc()->format('Y-m-d H:i:s'),
                 $transaction->notes,
                 json_encode($transaction->rawData),
@@ -38,7 +38,8 @@ class OutputManager
 
         // build file name by getting first and last date from transaction list.
 
-        $csv = Writer::createFromPath('./../coinbase-transactions.csv', 'w+');
+        $outputDir = str($outputDir)->finish('/');
+        $csv = Writer::createFromPath($outputDir.'coinbase-transactions.csv', 'w+');
         $csv->insertOne($header);
         $csv->insertAll($transactions);
     }
