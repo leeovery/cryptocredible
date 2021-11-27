@@ -28,6 +28,9 @@ class CreateFiatDepositsForCardPurchasesProcessor implements TransactionProcesso
     ): Collection {
         return $transactions
             ->filter(fn(Transaction $transaction) => $transaction->type->is(TransactionType::Trade()))
+            ->filter(function(Transaction $transaction) {
+                dd($transaction);
+            })
             ->filter(fn(Transaction $transaction) => $paymentMethods
                 ->where('id', data_get($transaction->rawData, 'buy.payment_method.id'))
                 ->where('type', 'worldpay_card')
