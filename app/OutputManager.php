@@ -11,22 +11,7 @@ class OutputManager
     {
         $transactions = $transactions
             ->sortBy(fn(Transaction $transaction) => $transaction->txDate->timestamp)
-            ->map(fn(Transaction $transaction) => [
-                $transaction->type->description,
-                $transaction->buyAmount?->value ?? '',
-                $transaction->buyAmount?->currency ?? '',
-                '',
-                $transaction->sellAmount?->value ?? '',
-                $transaction->sellAmount?->currency ?? '',
-                '',
-                $transaction->fee?->value ?? '',
-                $transaction->fee?->currency ?? '',
-                '',
-                $walletName,
-                $transaction->txDate->utc()->format('Y-m-d H:i:s'),
-                $transaction->notes,
-                json_encode($transaction->rawData),
-            ]);
+            ->values();
 
         $header = [
             'Type',
@@ -36,11 +21,41 @@ class OutputManager
             'Wallet', 'Timestamp', 'Note', 'Raw Data',
         ];
 
-        // build file name by getting first and last date from transaction list.
-
+        $fileName = self::buildOutputFileName($transactions, $walletName);
         $outputDir = str($outputDir)->finish('/');
-        $csv = Writer::createFromPath($outputDir.'coinbase-transactions.csv', 'w+');
+        
+        $csv = Writer::createFromPath($outputDir.$fileName.'.csv', 'w+');
         $csv->insertOne($header);
-        $csv->insertAll($transactions);
+        $csv->insertAll($transactions->map(fn(Transaction $transaction) => [
+            $transaction->type->description,
+            $transaction->buyAmount?->value ?? '',
+            $transaction->buyAmount?->currency ?? '',
+            '',
+            $transaction->sellAmount?->value ?? '',
+            $transaction->sellAmount?->currency ?? '',
+            '',
+            $transaction->fee?->value ?? '',
+            $transaction->fee?->currency ?? '',
+            '',
+            $walletName,
+            $transaction->txDate->utc()->format('Y-m-d H:i:s'),
+            $transaction->notes,
+            json_encode($transaction->rawData),
+        ]));
+    }
+
+    private static function buildOutputFileName(Collection $transactions, string $walletName): string
+    {
+        /** @var \App\Transaction $firstTx */
+        $firstTx = $transactions->first();
+        /** @var \App\Transaction $lastTx */
+        $lastTx = $transactions->last();
+
+        return sprintf(
+            '%s_transactions_%s-%s',
+            $walletName,
+            $firstTx->txDate->toDateString(),
+            $lastTx->txDate->toDateString()
+        );
     }
 }

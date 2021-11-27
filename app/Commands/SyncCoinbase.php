@@ -17,7 +17,7 @@ class SyncCoinbase extends Command
                             {--j|json= : Provide a json file rather than fetch txs via api.}
                             {--dump : Dump all the transactions fetched via the api into a json file.}';
 
-    protected $description = 'Command description';
+    protected $description = 'Fetch, process and output all Coinbase transactions in a format suitable for processing with BittyTax.';
 
     protected Coinbase $coinbase;
 
