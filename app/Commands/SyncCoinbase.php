@@ -42,11 +42,7 @@ class SyncCoinbase extends Command
         $this->task('Normalise data & match up trades', function () use (&$transactions) {
             $transactions = TransactionManager::coinbase()->process($transactions);
         });
-
-        // dd($transactions->first(function(Transaction $transaction) {
-        //     return str($transaction->notes)->contains('Auto-created deposit linked to tx');
-        // }));
-
+        
         $this->task('Output data', function () use ($transactions) {
             OutputManager::run(
                 $transactions,
