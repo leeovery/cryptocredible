@@ -10,6 +10,6 @@ class TransactionManager
     #[Pure]
     public static function coinbase(): CoinbaseTransactionDirector
     {
-        return new CoinbaseTransactionDirector();
+        return new CoinbaseTransactionDirector;
     }
 }
