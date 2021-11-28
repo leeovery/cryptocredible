@@ -57,8 +57,7 @@ class Coinbase
     private function buildRequestHeaders(string $method, string $url): array
     {
         $timestamp = now()->timestamp;
-        $url = Str::of($url)->remove('v2/')->start('/');
-        $hash = sprintf('%s%s/v2%s%s', $timestamp, $method, $url, '');
+        $hash = sprintf('%s%s/v2%s', $timestamp, $method, $url);
 
         return [
             'CB-ACCESS-KEY'       => $this->apiKey,
@@ -71,10 +70,5 @@ class Coinbase
     public function fetchAllTransactions(CoinbaseAccount $account): Collection
     {
         return $this->getAll("{$account->resourcePath()}/transactions?expand=all&limit=100");
-    }
-
-    public function fetchPaymentMethods(): Collection
-    {
-        return $this->getAll('/payment-methods?limit=100');
     }
 }

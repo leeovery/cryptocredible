@@ -2,15 +2,14 @@
 
 namespace App\Commands;
 
-use App\Exchanges\Coinbase\CoinbaseAccount;
-use App\Exchanges\Coinbase\Facades\Coinbase;
+use App\Exchanges\CoinbasePro\CoinbaseProAccount;
+use App\Exchanges\CoinbasePro\Facades\CoinbasePro;
 use App\Facades\TransactionOutputManager;
 use App\Managers\TransactionProcessManager;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Collection;
-use LaravelZero\Framework\Commands\Command;
 
-class SyncCoinbasePro extends Command
+class SyncCoinbasePro extends SyncCommand
 {
     protected $signature = 'sync:coinbase-pro
                             {--o|output-dir=./../ : Provide a dir on local file system to output csv to.}
@@ -21,11 +20,7 @@ class SyncCoinbasePro extends Command
 
     public function handle()
     {
-        $this->newLine();
-        $this->info('**********************');
-        $this->info('**** Coinbase Pro ****');
-        $this->info('**********************');
-        $this->newLine();
+        $this->outputTitle('Coinbase Pro');
 
         $this->processTransactions(
             $this->fetchTransactions()
@@ -39,7 +34,7 @@ class SyncCoinbasePro extends Command
         $this->info('Process transactions...');
 
         $this->task('Normalise data & match up trades', function () use (&$transactions) {
-            $transactions = TransactionProcessManager::coinbase()->process($transactions);
+            $transactions = TransactionProcessManager::coinbasePro()->process($transactions);
         });
 
         $this->task('Output data', function () use ($transactions) {
@@ -52,53 +47,31 @@ class SyncCoinbasePro extends Command
     private function fetchTransactions(): Collection
     {
         $this->info('Fetch transactions...');
-        $transactions = collect();
 
         if (! is_null($this->option('json'))) {
-            $this->task('Use provided json file', function () use (&$transactions) {
-                $transactions = collect(json_decode(file_get_contents($this->option('json')), true));
-            });
-
-            if ($transactions->isEmpty()) {
-                abort(404, 'No transactions found in the provided file.');
-            }
-
-            $this->newLine();
-
-            return $transactions;
+            return $this->getTransactionListFromProvidedFile($this->option('json'));
         }
 
         $accounts = collect();
-        $this->task('Open Coinbase connection', function () use (&$accounts) {
-            $accounts = Coinbase::fetchAllAccounts();
+        $this->task('Open Coinbase Pro connection', function () use (&$accounts) {
+            $accounts = CoinbasePro::fetchAllAccounts();
         });
 
         $this->line('Fetch transactions for:');
-        $transactions = $accounts->flatMap(function (CoinbaseAccount $account) {
+        $transactions = $accounts->flatMap(function (CoinbaseProAccount $account) {
             $transactions = collect();
-            $this->task("    {$account->name()}", function () use ($account, &$transactions) {
-                $transactions = Coinbase::fetchAllTransactions($account);
+            $this->task("    {$account->currency()} Wallet", function () use ($account, &$transactions) {
+                $transactions = CoinbasePro::fetchAllTransactions($account);
             }, 'fetching...');
 
             return $transactions;
         })->filter();
 
-        $this->dumpTransactionsToFile($transactions);
+        $this->dumpTransactionsToFile($transactions, 'coinbase-pro-transactions');
 
         $this->newLine();
 
         return $transactions;
-    }
-
-    private function dumpTransactionsToFile(Collection $transactions): void
-    {
-        if ($this->option('dump')) {
-            $this->line('Dump transactions to file option provided...');
-            $outputDir = str($this->option('output-dir'))->finish('/')->append('coinbase-transactions.json');
-            $this->task("Dumping data to {$outputDir}", function () use ($outputDir, $transactions) {
-                file_put_contents($outputDir, $transactions->toJson());
-            });
-        }
     }
 
     public function schedule(Schedule $schedule): void

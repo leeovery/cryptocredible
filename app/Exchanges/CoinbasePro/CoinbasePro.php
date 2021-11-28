@@ -2,7 +2,7 @@
 
 namespace App\Exchanges\CoinbasePro;
 
-use App\Exchanges\Coinbase\Exceptions\CoinbaseException;
+use App\Exchanges\CoinbasePro\Exceptions\CoinbaseProException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
@@ -14,25 +14,31 @@ class CoinbasePro
 
     public function fetchAllAccounts(): Collection
     {
-        return $this->getAll('/accounts?limit=100')->mapInto(CoinbaseAccount::class);
+        return $this->getAll('/accounts')->mapInto(CoinbaseProAccount::class);
     }
 
     private function getAll(string $url): Collection
     {
+        $limit = 1000;
         $collection = collect();
+        $afterCursor = null;
 
         while (true) {
-            $response = $this->get($url);
+            $queries = http_build_query([
+                'after' => $afterCursor,
+                'limit' => $limit,
+            ]);
 
-            throw_unless($response->successful(), CoinbaseException::requestFailed());
+            $response = $this->get($url.($queries ? '?'.$queries : ''));
+
+            throw_unless($response->successful(), CoinbaseProException::requestFailed());
             $results = $response->json();
-
-            $url = data_get($results, 'pagination.next_uri');
-            if ($data = data_get($results, 'data')) {
-                $collection->push(...$data);
+            if ($results) {
+                $collection->push(...$results);
             }
 
-            if (is_null($url)) {
+            $afterCursor = $response->header('CB-AFTER');
+            if (! $afterCursor || count($results) < $limit) {
                 goto end;
             }
         }
@@ -44,9 +50,9 @@ class CoinbasePro
 
     private function get($url): Response
     {
-        $url = Str::of($url)->remove('v2/')->start('/');
+        $url = Str::of($url)->start('/');
 
-        return Http::baseUrl('https://api.coinbase.com/v2')
+        return Http::baseUrl('https://api.pro.coinbase.com')
             ->contentType('application/json')
             ->withHeaders($this->buildRequestHeaders('GET', $url))
             ->retry(3, 250)
@@ -57,24 +63,18 @@ class CoinbasePro
     private function buildRequestHeaders(string $method, string $url): array
     {
         $timestamp = now()->timestamp;
-        $url = Str::of($url)->remove('v2/')->start('/');
-        $hash = sprintf('%s%s/v2%s%s', $timestamp, $method, $url, '');
+        $hash = sprintf('%s%s%s', $timestamp, $method, $url);
 
         return [
-            'CB-ACCESS-KEY'       => $this->apiKey,
-            'CB-ACCESS-SIGN'      => hash_hmac('sha256', $hash, $this->apiSecret),
-            'CB-ACCESS-TIMESTAMP' => $timestamp,
-            'CB-VERSION'          => '2021-11-21',
+            'CB-ACCESS-KEY'        => $this->apiKey,
+            'CB-ACCESS-SIGN'       => base64_encode(hash_hmac('sha256', $hash, base64_decode($this->apiSecret), true)),
+            'CB-ACCESS-TIMESTAMP'  => $timestamp,
+            'CB-ACCESS-PASSPHRASE' => $this->apiPassphrase,
         ];
     }
 
-    public function fetchAllTransactions(CoinbaseAccount $account): Collection
+    public function fetchAllTransactions(CoinbaseProAccount $account): Collection
     {
-        return $this->getAll("{$account->resourcePath()}/transactions?expand=all&limit=100");
-    }
-
-    public function fetchPaymentMethods(): Collection
-    {
-        return $this->getAll('/payment-methods?limit=100');
+        return $this->getAll("/accounts/{$account->id()}/ledger");
     }
 }
