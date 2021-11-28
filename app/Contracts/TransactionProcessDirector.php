@@ -4,7 +4,7 @@ namespace App\Contracts;
 
 use Illuminate\Support\Collection;
 
-interface TransactionDirector
+interface TransactionProcessDirector
 {
     public function process(Collection $transactions): Collection;
 }

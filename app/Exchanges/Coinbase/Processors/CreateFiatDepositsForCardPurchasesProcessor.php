@@ -2,10 +2,10 @@
 
 namespace App\Exchanges\Coinbase\Processors;
 
-use App\Amount;
 use App\Contracts\TransactionProcessor;
 use App\Enums\TransactionType;
-use App\Transaction;
+use App\ValueObjects\Amount;
+use App\ValueObjects\Transaction;
 use Brick\Money\Money;
 use Illuminate\Support\Collection;
 
@@ -17,28 +17,25 @@ class CreateFiatDepositsForCardPurchasesProcessor implements TransactionProcesso
             $transactions
                 ->filter(fn(Transaction $transaction) => $transaction->type->is(TransactionType::Trade()))
                 ->filter(function (Transaction $transaction) {
-                    return str(data_get($transaction->rawData, 'details.subtitle', ''))->contains('******');
+                    return str($transaction->getRaw('details.subtitle', ''))->contains('******');
                 })
                 ->map(function (Transaction $transaction) {
                     $subtotal = Money::of(
-                        data_get($transaction->rawData, 'buy.subtotal.amount'),
-                        data_get($transaction->rawData, 'buy.subtotal.currency')
+                        $transaction->getRaw('buy.subtotal.amount'),
+                        $transaction->getRaw('buy.subtotal.currency')
                     );
                     $fee = Money::of(
-                        data_get($transaction->rawData, 'buy.fee.amount'),
-                        data_get($transaction->rawData, 'buy.subtotal.currency')
+                        $transaction->getRaw('buy.fee.amount'),
+                        $transaction->getRaw('buy.subtotal.currency')
                     );
 
-                    return (new Transaction)
+                    return (new Transaction($transaction->rawData))
                         ->setType(TransactionType::Deposit())
                         ->setBuyAmount(new Amount(
                             $subtotal->plus($fee)->getAmount(),
-                            data_get($transaction->rawData, 'buy.subtotal.currency'),
+                            $transaction->getRaw('buy.subtotal.currency'),
                         ))
-                        ->setTxDate($transaction->txDate->subSecond())
-                        ->setRawData($transaction->rawData)
-                        ->setStatus($transaction->status)
-                        ->setId($transaction->id)
+                        ->setTxDate($transaction->txDate->avoidMutation()->subSecond())
                         ->setNotes("Auto-created deposit linked to tx#{$transaction->id}. This was a debit/credit card purchase and this auto tx keeps your fiat accounts balanced.");
                 })
                 ->push(...$transactions)

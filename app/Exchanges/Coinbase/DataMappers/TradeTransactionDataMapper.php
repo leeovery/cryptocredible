@@ -2,42 +2,39 @@
 
 namespace App\Exchanges\Coinbase\DataMappers;
 
-use App\Amount;
-use App\Enums\TradeSide;
+use App\Contracts\TransactionDataMapper;
 use App\Enums\TransactionType;
-use App\PartialTradeTransaction;
-use App\Transaction;
+use App\ValueObjects\Amount;
+use App\ValueObjects\Transaction;
 
-final class TradeTransactionDataMapper extends TransactionDataMapper
+final class TradeTransactionDataMapper implements TransactionDataMapper
 {
     public function execute(Transaction $transaction): Transaction
     {
-        $transaction = PartialTradeTransaction::createFromTransaction($transaction)
+        $transaction = $transaction
             ->setType(TransactionType::Trade())
             ->setFee(new Amount(
-                $this->getRaw('trade.fee.amount'),
-                $this->getRaw('trade.fee.currency')
+                $transaction->getRaw('trade.fee.amount'),
+                $transaction->getRaw('trade.fee.currency')
             ))
-            ->setMatchableId($this->getRaw('trade.idem'))
-            ->setNotes($this->getRaw('details.header').' '.$this->getRaw('details.subtitle'));
+            ->setNotes($transaction->getRaw('details.header').' '.$transaction->getRaw('details.subtitle'));
 
-        $amount = new Amount($this->getRaw('amount.amount'), $this->getRaw('amount.currency'));
+        $amount = new Amount(
+            $transaction->getRaw('amount.amount'),
+            $transaction->getRaw('amount.currency')
+        );
 
-        if ($this->isSellSide()) {
-            $transaction
-                ->setTradeSide(TradeSide::Sell())
-                ->setSellAmount($amount);
+        if ($this->isSellSide($transaction)) {
+            $transaction->setSellAmount($amount);
         } else {
-            $transaction
-                ->setTradeSide(TradeSide::Buy())
-                ->setBuyAmount($amount);
+            $transaction->setBuyAmount($amount);
         }
 
         return $transaction;
     }
 
-    private function isSellSide(): bool
+    private function isSellSide(Transaction $transaction): bool
     {
-        return is_negative($this->getRaw('amount.amount'));
+        return is_negative($transaction->getRaw('amount.amount'));
     }
 }

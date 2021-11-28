@@ -2,6 +2,7 @@
 
 namespace App\Exchanges\Coinbase\Processors;
 
+use App\Contracts\TransactionDataMapper;
 use App\Contracts\TransactionProcessor;
 use App\Exchanges\Coinbase\DataMappers\BuyTransactionDataMapper;
 use App\Exchanges\Coinbase\DataMappers\ExchangeDepositTransactionDataMapper;
@@ -14,9 +15,7 @@ use App\Exchanges\Coinbase\DataMappers\ProWithdrawalTransactionDataMapper;
 use App\Exchanges\Coinbase\DataMappers\SellTransactionDataMapper;
 use App\Exchanges\Coinbase\DataMappers\SendTransactionDataMapper;
 use App\Exchanges\Coinbase\DataMappers\TradeTransactionDataMapper;
-use App\Exchanges\Coinbase\DataMappers\TransactionDataMapper;
-use App\Transaction;
-use Illuminate\Support\Carbon;
+use App\ValueObjects\Transaction;
 use Illuminate\Support\Collection;
 
 class MapRawDataToTransactionProcessor implements TransactionProcessor
@@ -38,24 +37,18 @@ class MapRawDataToTransactionProcessor implements TransactionProcessor
     public function handle(Collection $transactions, callable $next): Collection
     {
         return $next(
-            $transactions->map(function (array $transaction) {
-                return $this->getMapper($transaction)->execute((new Transaction)
-                    ->setRawData($transaction)
-                    ->setId(data_get($transaction, 'id'))
-                    ->setStatus(data_get($transaction, 'status'))
-                    ->setTxDate(Carbon::make(data_get($transaction, 'created_at')))
-                );
-            })
+            $transactions->map(fn(array $transaction) => $this
+                ->getMapperByType(data_get($transaction, 'type'))
+                ->execute(new Transaction($transaction))
+            )
         );
     }
 
-    private function getMapper(array $transaction): TransactionDataMapper
+    private function getMapperByType(string $type): TransactionDataMapper
     {
-        $type = data_get($transaction, 'type');
-
         $mapper = $this->dataMappers[$type]
             ?? abort(400, "No matching tx mapper found for coinbase tx type '{$type}'.");
 
-        return new $mapper($transaction);
+        return new $mapper;
     }
 }

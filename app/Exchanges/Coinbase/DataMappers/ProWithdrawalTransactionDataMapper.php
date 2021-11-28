@@ -2,19 +2,20 @@
 
 namespace App\Exchanges\Coinbase\DataMappers;
 
-use App\Amount;
+use App\Contracts\TransactionDataMapper;
 use App\Enums\TransactionType;
-use App\Transaction;
+use App\ValueObjects\Amount;
+use App\ValueObjects\Transaction;
 
-final class ProWithdrawalTransactionDataMapper extends TransactionDataMapper
+final class ProWithdrawalTransactionDataMapper implements TransactionDataMapper
 {
     public function execute(Transaction $transaction): Transaction
     {
         $transaction
             ->setType(TransactionType::Deposit())
             ->setBuyAmount(new Amount(
-                $this->getRaw('amount.amount'),
-                $this->getRaw('amount.currency')
+                $transaction->getRaw('amount.amount'),
+                $transaction->getRaw('amount.currency')
             ))
             ->setNotes('Deposit from Coinbase Pro');
 

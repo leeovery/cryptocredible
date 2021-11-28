@@ -2,60 +2,61 @@
 
 namespace App\Exchanges\Coinbase\DataMappers;
 
-use App\Amount;
+use App\Contracts\TransactionDataMapper;
 use App\Enums\TransactionType;
-use App\Transaction;
+use App\ValueObjects\Amount;
+use App\ValueObjects\Transaction;
 
-final class SendTransactionDataMapper extends TransactionDataMapper
+final class SendTransactionDataMapper implements TransactionDataMapper
 {
     public function execute(Transaction $transaction): Transaction
     {
-        $type = $this->decideTransactionType();
+        $type = $this->decideTransactionType($transaction);
 
         $transaction
-            ->setTxHash($this->getRaw('network.hash'))
-            ->setTxUrl($this->getRaw('network.transaction_url'))
-            ->setNotes($this->getRaw('details.header').' '.$this->getRaw('details.subtitle'))
+            ->setTxHash($transaction->getRaw('network.hash'))
+            ->setTxUrl($transaction->getRaw('network.transaction_url'))
+            ->setNotes($transaction->getRaw('details.header').' '.$transaction->getRaw('details.subtitle'))
             ->setType($type);
 
         if ($type->is(TransactionType::Withdrawal())) {
             $transaction
                 ->setSellAmount(new Amount(
-                    $this->getRaw('network.transaction_amount.amount'),
-                    $this->getRaw('network.transaction_amount.currency')
+                    $transaction->getRaw('network.transaction_amount.amount'),
+                    $transaction->getRaw('network.transaction_amount.currency')
                 ))
                 ->setFee(new Amount(
-                    $this->getRaw('network.transaction_fee.amount'),
-                    $this->getRaw('network.transaction_fee.currency')
+                    $transaction->getRaw('network.transaction_fee.amount'),
+                    $transaction->getRaw('network.transaction_fee.currency')
                 ));
         } else {
             $transaction->setBuyAmount(new Amount(
-                $this->getRaw('amount.amount'),
-                $this->getRaw('amount.currency')
+                $transaction->getRaw('amount.amount'),
+                $transaction->getRaw('amount.currency')
             ));
         }
 
         if ($type->is(TransactionType::Income())) {
-            $transaction->setNotes($this->getRaw('details.header').' via '.$this->getRaw('from.name'));
+            $transaction->setNotes($transaction->getRaw('details.header').' via '.$transaction->getRaw('from.name'));
         }
 
         return $transaction;
     }
 
-    private function decideTransactionType(): TransactionType
+    private function decideTransactionType(Transaction $transaction): TransactionType
     {
-        $fromName = $this->getRaw('from.name');
+        $fromName = $transaction->getRaw('from.name');
 
         if ($fromName && str($fromName)->lower()->contains('coinbase earn')) {
             return TransactionType::Income();
         }
 
-        $description = $this->getRaw('description');
+        $description = $transaction->getRaw('description');
         if ($description && str($description)->lower()->contains('earn task')) {
             return TransactionType::Income();
         }
 
-        if (is_negative($this->getRaw('amount.amount'))) {
+        if (is_negative($transaction->getRaw('amount.amount'))) {
             return TransactionType::Withdrawal();
         }
 

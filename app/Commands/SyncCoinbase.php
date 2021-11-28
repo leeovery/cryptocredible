@@ -4,9 +4,8 @@ namespace App\Commands;
 
 use App\Exchanges\Coinbase\CoinbaseAccount;
 use App\Exchanges\Coinbase\Facades\Coinbase;
-use App\OutputManager;
-use App\Transaction;
-use App\TransactionManager;
+use App\Facades\TransactionOutputManager;
+use App\Managers\TransactionProcessManager;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Collection;
 use LaravelZero\Framework\Commands\Command;
@@ -40,11 +39,11 @@ class SyncCoinbase extends Command
         $this->info('Process transactions...');
 
         $this->task('Normalise data & match up trades', function () use (&$transactions) {
-            $transactions = TransactionManager::coinbase()->process($transactions);
+            $transactions = TransactionProcessManager::coinbase()->process($transactions);
         });
 
         $this->task('Output data', function () use ($transactions) {
-            OutputManager::run($transactions, 'Coinbase', $this->option('output-dir'));
+            TransactionOutputManager::run($transactions, 'Coinbase', $this->option('output-dir'));
         });
 
         $this->newLine();

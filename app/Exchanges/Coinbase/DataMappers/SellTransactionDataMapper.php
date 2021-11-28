@@ -2,31 +2,30 @@
 
 namespace App\Exchanges\Coinbase\DataMappers;
 
-use App\Amount;
+use App\Contracts\TransactionDataMapper;
 use App\Enums\TransactionType;
-use App\Transaction;
+use App\ValueObjects\Amount;
+use App\ValueObjects\Transaction;
 
-final class SellTransactionDataMapper extends TransactionDataMapper
+final class SellTransactionDataMapper implements TransactionDataMapper
 {
     public function execute(Transaction $transaction): Transaction
     {
-        // crypto to fiat trade
-
         $transaction
             ->setType(TransactionType::Trade())
             ->setBuyAmount(new Amount(
-                $this->getRaw('sell.total.amount'),
-                $this->getRaw('sell.total.currency')
+                $transaction->getRaw('sell.total.amount'),
+                $transaction->getRaw('sell.total.currency')
             ))
             ->setSellAmount(new Amount(
-                $this->getRaw('sell.amount.amount'),
-                $this->getRaw('sell.amount.currency')
+                $transaction->getRaw('sell.amount.amount'),
+                $transaction->getRaw('sell.amount.currency')
             ))
             ->setFee(new Amount(
-                $this->getRaw('sell.fee.amount'),
-                $this->getRaw('sell.fee.currency')
+                $transaction->getRaw('sell.fee.amount'),
+                $transaction->getRaw('sell.fee.currency')
             ))
-            ->setNotes($this->getRaw('details.title').' '.$this->getRaw('details.subtitle'));
+            ->setNotes($transaction->getRaw('details.title').' '.$transaction->getRaw('details.subtitle'));
 
         return $transaction;
     }
