@@ -10,4 +10,9 @@ class TransactionProcessManager
     {
         return new CoinbaseTransactionProcessDirector;
     }
+
+    public static function coinbasePro(): CoinbaseTransactionProcessDirector
+    {
+        return new CoinbaseTransactionProcessDirector;
+    }
 }

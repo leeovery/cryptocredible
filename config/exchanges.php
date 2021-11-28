@@ -8,7 +8,9 @@ return [
     ],
 
     'coinbase_pro' => [
-
+        'api_key'        => env('COINBASE_PRO_API_KEY'),
+        'api_secret'     => env('COINBASE_PRO_API_SECRET'),
+        'api_passphrase' => env('COINBASE_PRO_API_PASSPHRASE'),
     ],
 
 ];
