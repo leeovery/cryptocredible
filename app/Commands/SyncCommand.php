@@ -2,33 +2,72 @@
 
 namespace App\Commands;
 
+use App\Facades\TransactionOutputManager;
 use Illuminate\Support\Collection;
 use LaravelZero\Framework\Commands\Command;
+use Symfony\Component\Console\Input\InputOption;
 
 abstract class SyncCommand extends Command
 {
-    protected function outputTitle(string $title)
+    protected string $exchangeName = '';
+
+    protected $description = '';
+
+    public function __construct()
     {
-        $this->newLine();
-        $this->info('**********************');
-        $this->info('**** '.$title.' ****');
-        $this->info('**********************');
-        $this->newLine();
+        $this->setName('sync:'.str($this->exchangeName)->lower()->kebab());
+        $this->description = "Fetch, process and output all {$this->exchangeName} transactions in a format suitable for processing with BittyTax.";
+        parent::__construct();
     }
 
-    protected function dumpTransactionsToFile(Collection $transactions, $fileName): void
+    protected function configure(): void
+    {
+        $this
+            ->addOption(
+                'output-dir',
+                '--o',
+                InputOption::VALUE_OPTIONAL,
+                'Provide a dir on local file system to output csv to.',
+                './../'
+            )
+            ->addOption(
+                'json',
+                '--j',
+                InputOption::VALUE_OPTIONAL,
+                'Provide a json file rather than fetch txs via api.'
+            )
+            ->addOption(
+                'dump',
+                null,
+                InputOption::VALUE_NONE,
+                'Dump all the transactions fetched via the api into a json file.'
+            );
+    }
+
+    protected function dumpTransactionsToFile(Collection $transactions): void
     {
         if ($this->option('dump')) {
             $this->line('Dump transactions to file option provided...');
-            $outputDir = str($this->option('output-dir'))->finish('/')->append($fileName.'.json');
+            $outputDir = str($this->option('output-dir'))->finish('/')->append($this->exchangeName.'-transaction-dump-'.now().'.json');
             $this->task("Dumping data to {$outputDir}", function () use ($outputDir, $transactions) {
                 file_put_contents($outputDir, $transactions->toJson());
             });
         }
     }
 
-    protected function getTransactionListFromProvidedFile($file): Collection
+    protected function outputTransactions(Collection $transactions): void
     {
+        $this->task('Output data', function () use ($transactions) {
+            TransactionOutputManager::run($transactions, $this->exchangeName, $this->option('output-dir'));
+        });
+    }
+
+    protected function getTransactionListFromProvidedFile(): ?Collection
+    {
+        if (is_null($file = $this->option('json'))) {
+            return null;
+        }
+
         $transactions = collect();
 
         $this->task('Use provided json file', function () use ($file, &$transactions) {

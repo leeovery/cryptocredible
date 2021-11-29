@@ -4,52 +4,40 @@ namespace App\Commands;
 
 use App\Exchanges\CoinbasePro\CoinbaseProAccount;
 use App\Exchanges\CoinbasePro\Facades\CoinbasePro;
-use App\Facades\TransactionOutputManager;
 use App\Managers\TransactionProcessManager;
-use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Collection;
 
 class SyncCoinbasePro extends SyncCommand
 {
-    protected $signature = 'sync:coinbase-pro
-                            {--o|output-dir=./../ : Provide a dir on local file system to output csv to.}
-                            {--j|json= : Provide a json file rather than fetch txs via api.}
-                            {--dump : Dump all the transactions fetched via the api into a json file.}';
-
-    protected $description = 'Fetch, process and output all Coinbase Pro transactions in a format suitable for processing with BittyTax.';
+    protected string $exchangeName = 'Coinbase Pro';
 
     public function handle()
     {
-        $this->outputTitle('Coinbase Pro');
+        $this->title($this->exchangeName);
 
-        $this->processTransactions(
-            $this->fetchTransactions()
+        $this->outputTransactions(
+            $this->processTransactions($this->fetchTransactions())
         );
 
         $this->info('Output successful ✅');
     }
 
-    public function processTransactions(Collection $transactions): void
+    public function processTransactions(Collection $transactions): Collection
     {
         $this->info('Process transactions...');
-
         $this->task('Normalise data & match up trades', function () use (&$transactions) {
             $transactions = TransactionProcessManager::coinbasePro()->process($transactions);
         });
 
-        $this->task('Output data', function () use ($transactions) {
-            TransactionOutputManager::run($transactions, 'Coinbase', $this->option('output-dir'));
-        });
-
-        $this->newLine();
+        return $transactions;
     }
 
     private function fetchTransactions(): Collection
     {
         $this->info('Fetch transactions...');
 
-        if (! is_null($this->option('json'))) {
-            return $this->getTransactionListFromProvidedFile($this->option('json'));
+        if ($transactions = $this->getTransactionListFromProvidedFile()) {
+            return $transactions;
         }
 
         $accounts = collect();
@@ -67,15 +55,10 @@ class SyncCoinbasePro extends SyncCommand
             return $transactions;
         })->filter();
 
-        $this->dumpTransactionsToFile($transactions, 'coinbase-pro-transactions');
+        $this->dumpTransactionsToFile($transactions);
 
         $this->newLine();
 
         return $transactions;
-    }
-
-    public function schedule(Schedule $schedule): void
-    {
-        // $schedule->command(static::class)->everyMinute();
     }
 }

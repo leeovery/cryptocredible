@@ -29,7 +29,7 @@ class MatchOneSideTradeTransactionProcessor implements TransactionProcessor
         throw_unless($partialsTotalCount % 2 === 0, MatchOneSideTradesException::unevenPartialsFound());
 
         $partials = $partials
-            ->groupBy(fn(Transaction $transaction) => $transaction->getRaw('trade.idem'))
+            ->groupBy(fn (Transaction $transaction) => $transaction->getRaw('trade.idem'))
             ->map(function (Collection $partialTrades) {
                 throw_unless(
                     $buySide = $partialTrades->firstWhere('sellAmount', null),

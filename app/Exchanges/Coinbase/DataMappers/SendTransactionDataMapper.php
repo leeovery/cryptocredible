@@ -63,4 +63,3 @@ final class SendTransactionDataMapper implements TransactionDataMapper
         return TransactionType::Deposit();
     }
 }
-

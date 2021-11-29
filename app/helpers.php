@@ -3,7 +3,7 @@
 use Illuminate\Support\Str;
 
 if (! function_exists('str')) {
-    function str(string $value): \Illuminate\Support\Stringable
+    function str(string $value): Illuminate\Support\Stringable
     {
         return Str::of($value);
     }

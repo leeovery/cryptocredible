@@ -10,7 +10,9 @@ use Illuminate\Support\Str;
 
 class Coinbase
 {
-    public function __construct(private string $apiKey, private string $apiSecret) { }
+    public function __construct(private string $apiKey, private string $apiSecret)
+    {
+    }
 
     public function fetchAllAccounts(): Collection
     {

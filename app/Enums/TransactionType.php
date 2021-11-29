@@ -1,4 +1,6 @@
-<?php /** @noinspection ALL */
+<?php
+
+/** @noinspection ALL */
 
 namespace App\Enums;
 
@@ -12,8 +14,11 @@ use BenSampo\Enum\Enum;
  */
 final class TransactionType extends Enum
 {
-    const Deposit    = 0;
-    const Withdrawal = 1;
-    const Trade      = 2;
-    const Income     = 3;
+    public const Deposit = 0;
+
+    public const Withdrawal = 1;
+
+    public const Trade = 2;
+
+    public const Income = 3;
 }

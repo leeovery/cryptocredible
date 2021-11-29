@@ -6,9 +6,8 @@ use Exception;
 
 class CoinbaseException extends Exception
 {
-    public static function requestFailed($message = 'Fetching coinbase resource failed'): CoinbaseException
+    public static function requestFailed($message = 'Fetching coinbase resource failed'): self
     {
         return new self($message, 400);
     }
 }
-

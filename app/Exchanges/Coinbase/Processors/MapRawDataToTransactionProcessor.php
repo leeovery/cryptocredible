@@ -37,7 +37,8 @@ class MapRawDataToTransactionProcessor implements TransactionProcessor
     public function handle(Collection $transactions, callable $next): Collection
     {
         return $next(
-            $transactions->map(fn(array $transaction) => $this
+            $transactions->map(
+                fn (array $transaction) => $this
                 ->getMapperByType(data_get($transaction, 'type'))
                 ->execute(new Transaction($transaction))
             )

@@ -22,4 +22,3 @@ final class InterestTransactionDataMapper implements TransactionDataMapper
         return $transaction;
     }
 }
-

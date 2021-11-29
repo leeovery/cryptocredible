@@ -20,15 +20,15 @@ class TransactionOutputManager
     public function run(Collection $transactions, string $walletName, string $outputDir)
     {
         $transactions = $transactions
-            ->sortBy(fn(Transaction $transaction) => $transaction->txDate->timestamp)
+            ->sortBy(fn (Transaction $transaction) => $transaction->txDate->timestamp)
             ->values();
 
         $fileName = $this->buildOutputFileName($transactions, $walletName);
         $outputDir = str($outputDir)->finish('/');
-        
+
         $csv = Writer::createFromPath($outputDir.$fileName.'.csv', 'w+');
         $csv->insertOne($this->headers);
-        $csv->insertAll($transactions->map(fn(Transaction $transaction) => [
+        $csv->insertAll($transactions->map(fn (Transaction $transaction) => [
             $transaction->type->description,
             $transaction->buyAmount?->value ?? '',
             $transaction->buyAmount?->currency ?? '',

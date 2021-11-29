@@ -15,7 +15,7 @@ class CreateFiatDepositsForCardPurchasesProcessor implements TransactionProcesso
     {
         return $next(
             $transactions
-                ->filter(fn(Transaction $transaction) => $transaction->type->is(TransactionType::Trade()))
+                ->filter(fn (Transaction $transaction) => $transaction->type->is(TransactionType::Trade()))
                 ->filter(function (Transaction $transaction) {
                     return str($transaction->getRaw('details.subtitle', ''))->contains('******');
                 })

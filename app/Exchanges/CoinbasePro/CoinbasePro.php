@@ -10,7 +10,9 @@ use Illuminate\Support\Str;
 
 class CoinbasePro
 {
-    public function __construct(private string $apiKey, private string $apiSecret, private string $apiPassphrase) { }
+    public function __construct(private string $apiKey, private string $apiSecret, private string $apiPassphrase)
+    {
+    }
 
     public function fetchAllAccounts(): Collection
     {
@@ -20,8 +22,8 @@ class CoinbasePro
     private function getAll(string $url): Collection
     {
         $limit = 1000;
-        $collection = collect();
         $afterCursor = null;
+        $collection = collect();
 
         while (true) {
             $queries = http_build_query([
@@ -29,7 +31,7 @@ class CoinbasePro
                 'limit' => $limit,
             ]);
 
-            $response = $this->get($url.($queries ? '?'.$queries : ''));
+            $response = $this->get("{$url}?{$queries}");
 
             throw_unless($response->successful(), CoinbaseProException::requestFailed());
             $results = $response->json();
@@ -67,7 +69,9 @@ class CoinbasePro
 
         return [
             'CB-ACCESS-KEY'        => $this->apiKey,
-            'CB-ACCESS-SIGN'       => base64_encode(hash_hmac('sha256', $hash, base64_decode($this->apiSecret), true)),
+            'CB-ACCESS-SIGN'       => base64_encode(
+                hash_hmac('sha256', $hash, base64_decode($this->apiSecret), true)
+            ),
             'CB-ACCESS-TIMESTAMP'  => $timestamp,
             'CB-ACCESS-PASSPHRASE' => $this->apiPassphrase,
         ];
