@@ -17,30 +17,27 @@ class Transaction
 
     public string $id;
 
-    public string $status;
+    public ?string $status = null;
 
     public ?string $txHash = null;
 
     public ?string $txUrl = null;
 
-    public string $notes;
+    public string $notes = '';
 
-    public array $rawData;
+    public ?CarbonImmutable $date;
 
-    public ?CarbonImmutable $txDate;
-
-    public function __construct(array $rawData)
+    public function __construct(private array $rawData)
     {
-        $this
-            ->setRawData($rawData)
-            ->setId($this->getRaw('id'))
-            ->setStatus($this->getRaw('status'))
-            ->setTxDate(CarbonImmutable::make($this->getRaw('created_at')));
     }
 
-    public function setTxDate(?CarbonImmutable $txDate): static
+    public function setDate(CarbonImmutable|string|null $date): static
     {
-        $this->txDate = $txDate;
+        if (is_string($date)) {
+            $date = CarbonImmutable::make($date);
+        }
+
+        $this->date = $date;
 
         return $this;
     }
@@ -55,13 +52,6 @@ class Transaction
     public function setId(string $id): static
     {
         $this->id = $id;
-
-        return $this;
-    }
-
-    public function setRawData(array $rawData): static
-    {
-        $this->rawData = $rawData;
 
         return $this;
     }
@@ -114,6 +104,13 @@ class Transaction
     }
 
     public function setNotes(string $notes): static
+    {
+        $this->notes = $notes;
+
+        return $this;
+    }
+
+    public function setRawData(array $array): static
     {
         $this->notes = $notes;
 

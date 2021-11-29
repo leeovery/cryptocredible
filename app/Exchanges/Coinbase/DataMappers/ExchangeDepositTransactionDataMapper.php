@@ -12,6 +12,9 @@ final class ExchangeDepositTransactionDataMapper implements TransactionDataMappe
     public function execute(Transaction $transaction): Transaction
     {
         $transaction
+            ->setId($transaction->getRaw('id'))
+            ->setStatus($transaction->getRaw('status'))
+            ->setDate($transaction->getRaw('created_at'))
             ->setType(TransactionType::Withdrawal())
             ->setSellAmount(new Amount(
                 $transaction->getRaw('amount.amount'),

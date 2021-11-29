@@ -29,13 +29,15 @@ class CreateFiatDepositsForCardPurchasesProcessor implements TransactionProcesso
                         $transaction->getRaw('buy.subtotal.currency')
                     );
 
-                    return (new Transaction($transaction->rawData))
+                    return (new Transaction($transaction->getRaw()))
+                        ->setId($transaction->getRaw('id'))
+                        ->setStatus($transaction->getRaw('status'))
                         ->setType(TransactionType::Deposit())
                         ->setBuyAmount(new Amount(
                             $subtotal->plus($fee)->getAmount(),
                             $transaction->getRaw('buy.subtotal.currency'),
                         ))
-                        ->setTxDate($transaction->txDate->avoidMutation()->subSecond())
+                        ->setDate($transaction->date->avoidMutation()->subSecond())
                         ->setNotes("Auto-created deposit linked to tx#{$transaction->id}. This was a debit/credit card purchase and this auto tx keeps your fiat accounts balanced.");
                 })
                 ->push(...$transactions)

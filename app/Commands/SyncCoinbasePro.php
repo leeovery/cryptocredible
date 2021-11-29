@@ -49,7 +49,8 @@ class SyncCoinbasePro extends SyncCommand
         $transactions = $accounts->flatMap(function (CoinbaseProAccount $account) {
             $transactions = collect();
             $this->task("    {$account->currency()} Wallet", function () use ($account, &$transactions) {
-                $transactions = CoinbasePro::fetchAllTransactions($account);
+                $transactions = CoinbasePro::fetchAllTransactions($account)
+                    ->map(fn (array $tx) => tap($tx, fn (&$tx) => $tx['currency'] = $account->currency()));
             }, 'fetching...');
 
             return $transactions;

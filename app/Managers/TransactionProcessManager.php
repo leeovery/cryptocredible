@@ -3,6 +3,7 @@
 namespace App\Managers;
 
 use App\Exchanges\Coinbase\CoinbaseTransactionProcessDirector;
+use App\Exchanges\CoinbasePro\CoinbaseProTransactionProcessDirector;
 
 class TransactionProcessManager
 {
@@ -11,8 +12,8 @@ class TransactionProcessManager
         return new CoinbaseTransactionProcessDirector;
     }
 
-    public static function coinbasePro(): CoinbaseTransactionProcessDirector
+    public static function coinbasePro(): CoinbaseProTransactionProcessDirector
     {
-        return new CoinbaseTransactionProcessDirector;
+        return new CoinbaseProTransactionProcessDirector;
     }
 }

@@ -1,30 +1,24 @@
 <?php
 
-namespace App\Exchanges\Coinbase\DataMappers;
+namespace App\Exchanges\CoinbasePro\DataMappers;
 
 use App\Contracts\TransactionDataMapper;
 use App\Enums\TransactionType;
 use App\ValueObjects\Amount;
 use App\ValueObjects\Transaction;
 
-final class TradeTransactionDataMapper implements TransactionDataMapper
+final class MatchTransactionDataMapper implements TransactionDataMapper
 {
     public function execute(Transaction $transaction): Transaction
     {
         $transaction = $transaction
             ->setId($transaction->getRaw('id'))
-            ->setStatus($transaction->getRaw('status'))
             ->setDate($transaction->getRaw('created_at'))
-            ->setType(TransactionType::Trade())
-            ->setFee(new Amount(
-                $transaction->getRaw('trade.fee.amount'),
-                $transaction->getRaw('trade.fee.currency')
-            ))
-            ->setNotes($transaction->getRaw('details.header').' '.$transaction->getRaw('details.subtitle'));
+            ->setType(TransactionType::Trade());
 
         $amount = new Amount(
-            $transaction->getRaw('amount.amount'),
-            $transaction->getRaw('amount.currency')
+            $transaction->getRaw('amount'),
+            $transaction->getRaw('currency')
         );
 
         if ($this->isSellSide($transaction)) {
@@ -38,6 +32,6 @@ final class TradeTransactionDataMapper implements TransactionDataMapper
 
     private function isSellSide(Transaction $transaction): bool
     {
-        return is_negative($transaction->getRaw('amount.amount'));
+        return is_negative($transaction->getRaw('amount'));
     }
 }

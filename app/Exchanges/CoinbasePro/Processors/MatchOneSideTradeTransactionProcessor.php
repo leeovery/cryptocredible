@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Exchanges\Coinbase\Processors;
+namespace App\Exchanges\CoinbasePro\Processors;
 
 use App\Contracts\TransactionProcessor;
 use App\Enums\TransactionType;
@@ -12,6 +12,11 @@ class MatchOneSideTradeTransactionProcessor implements TransactionProcessor
 {
     public function handle(Collection $transactions, callable $next): Collection
     {
+        // Match trades
+        // Each trade should have at least 2 sides
+        // Do they always have a fee too??
+
+        dd($transactions[0]);
         /** @var Collection $partials */
         /** @var Collection $transactions */
         [$partials, $transactions] = $transactions->partition(function (Transaction $transaction) {

@@ -20,7 +20,7 @@ class TransactionOutputManager
     public function run(Collection $transactions, string $walletName, string $outputDir)
     {
         $transactions = $transactions
-            ->sortBy(fn (Transaction $transaction) => $transaction->txDate->timestamp)
+            ->sortBy(fn (Transaction $transaction) => $transaction->date->timestamp)
             ->values();
 
         $fileName = $this->buildOutputFileName($transactions, $walletName);
@@ -40,9 +40,9 @@ class TransactionOutputManager
             $transaction->fee?->currency ?? '',
             '',
             $walletName,
-            $transaction->txDate->utc()->format('Y-m-d H:i:s'),
+            $transaction->date->utc()->format('Y-m-d H:i:s'),
             $transaction->notes,
-            json_encode($transaction->rawData),
+            json_encode($transaction->getRaw()),
         ]));
     }
 
@@ -56,8 +56,8 @@ class TransactionOutputManager
         return sprintf(
             '%s_transactions_%s-%s',
             $walletName,
-            $firstTx->txDate->toDateString(),
-            $lastTx->txDate->toDateString()
+            $firstTx->date->toDateString(),
+            $lastTx->date->toDateString()
         );
     }
 }

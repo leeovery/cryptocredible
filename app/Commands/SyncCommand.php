@@ -48,7 +48,10 @@ abstract class SyncCommand extends Command
     {
         if ($this->option('dump')) {
             $this->line('Dump transactions to file option provided...');
-            $outputDir = str($this->option('output-dir'))->finish('/')->append($this->exchangeName.'-transaction-dump-'.now().'.json');
+            $outputDir = str($this->option('output-dir'))
+                ->finish('/')
+                ->append($this->exchangeName.'-transaction-dump-'.now().'.json')
+                ->lower();
             $this->task("Dumping data to {$outputDir}", function () use ($outputDir, $transactions) {
                 file_put_contents($outputDir, $transactions->toJson());
             });

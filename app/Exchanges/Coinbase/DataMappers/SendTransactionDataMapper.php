@@ -14,6 +14,9 @@ final class SendTransactionDataMapper implements TransactionDataMapper
         $type = $this->decideTransactionType($transaction);
 
         $transaction
+            ->setId($transaction->getRaw('id'))
+            ->setStatus($transaction->getRaw('status'))
+            ->setDate($transaction->getRaw('created_at'))
             ->setTxHash($transaction->getRaw('network.hash'))
             ->setTxUrl($transaction->getRaw('network.transaction_url'))
             ->setNotes($transaction->getRaw('details.header').' '.$transaction->getRaw('details.subtitle'))

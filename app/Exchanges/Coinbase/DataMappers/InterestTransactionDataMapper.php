@@ -12,6 +12,9 @@ final class InterestTransactionDataMapper implements TransactionDataMapper
     public function execute(Transaction $transaction): Transaction
     {
         $transaction
+            ->setId($transaction->getRaw('id'))
+            ->setStatus($transaction->getRaw('status'))
+            ->setDate($transaction->getRaw('created_at'))
             ->setType(TransactionType::Income())
             ->setBuyAmount(new Amount(
                 $transaction->getRaw('amount.amount'),

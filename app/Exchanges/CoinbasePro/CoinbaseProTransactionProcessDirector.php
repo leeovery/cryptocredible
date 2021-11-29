@@ -3,9 +3,8 @@
 namespace App\Exchanges\CoinbasePro;
 
 use App\Contracts\TransactionProcessDirector;
-use App\Exchanges\Coinbase\Processors\CreateFiatDepositsForCardPurchasesProcessor;
-use App\Exchanges\Coinbase\Processors\MapRawDataToTransactionProcessor;
-use App\Exchanges\Coinbase\Processors\MatchOneSideTradeTransactionProcessor;
+use App\Exchanges\CoinbasePro\Processors\MapRawDataToTransactionProcessor;
+use App\Exchanges\CoinbasePro\Processors\MatchOneSideTradeTransactionProcessor;
 use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Collection;
 use function resolve;
@@ -14,7 +13,7 @@ class CoinbaseProTransactionProcessDirector implements TransactionProcessDirecto
 {
     private array $processors = [
         MapRawDataToTransactionProcessor::class,
-        // MatchOneSideTradeTransactionProcessor::class,
+        MatchOneSideTradeTransactionProcessor::class,
         // CreateFiatDepositsForCardPurchasesProcessor::class,
     ];
 
