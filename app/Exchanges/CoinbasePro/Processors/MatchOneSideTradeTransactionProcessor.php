@@ -13,29 +13,22 @@ class MatchOneSideTradeTransactionProcessor implements TransactionProcessor
     public function handle(Collection $transactions, callable $next): Collection
     {
         // Match trades
-        // Each trade should have at least 2 sides
-        // Do they always have a fee too??
+        // Each trade should have at least 2 sides, and sometimes will also have a fee.
 
-        dd($transactions[0]);
         /** @var Collection $partials */
         /** @var Collection $transactions */
         [$partials, $transactions] = $transactions->partition(function (Transaction $transaction) {
             if ($transaction->type->isNot(TransactionType::Trade())) {
                 return false;
             }
-            if (! is_null($transaction->buyAmount) && ! is_null($transaction->sellAmount)) {
-                return false;
-            }
 
             return true;
         });
 
-        $partialsTotalCount = $partials->count();
-        throw_unless($partialsTotalCount % 2 === 0, MatchOneSideTradesException::unevenPartialsFound());
-
         $partials = $partials
-            ->groupBy(fn (Transaction $transaction) => $transaction->getRaw('trade.idem'))
+            ->groupBy(fn (Transaction $transaction) => $transaction->getRaw('details.trade_id'))
             ->map(function (Collection $partialTrades) {
+                dd($partialTrades);
                 /* @var Transaction $buySide */
                 throw_unless(
                     $buySide = $partialTrades->firstWhere('sellAmount', null),
@@ -60,13 +53,7 @@ class MatchOneSideTradeTransactionProcessor implements TransactionProcessor
                     ->setId($sellSide->getRaw('trade.idem'));
             });
 
-        $expectedFinalCount = $transactions->count() + ($partialsTotalCount / 2);
         $transactions = $transactions->push(...$partials)->values();
-
-        throw_unless(
-            $transactions->count() === $expectedFinalCount,
-            MatchOneSideTradesException::unevenPartialsFound()
-        );
 
         return $next($transactions);
     }
