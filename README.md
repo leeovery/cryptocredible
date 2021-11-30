@@ -88,7 +88,9 @@ Each command accepts the follow options:
 Yes, but you are using it without warranty, and at your own risk. Having said that, here are some strong points which make this safe: 
 * It runs locally on your own computer, and you have total control over the data and even the code.
 * The exchange connections are configured via the `.env` file using **read-only** api credentials. These credentials never leave your system in a usable format.
-* The code of course is also open-source, so feel free to poke around and ensure it's safe.
+* The code is open-source, so feel free to poke around and ensure it's safe. Other people have probably poked around too. Safety in numbers. 
+
+_Trust but verify._
 
 ### Changelog
 
