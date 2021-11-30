@@ -68,21 +68,21 @@ class Transaction
         return $this;
     }
 
-    public function setSellAmount(Amount $sellAmount): static
+    public function setSellAmount(?Amount $sellAmount): static
     {
         $this->sellAmount = $sellAmount;
 
         return $this;
     }
 
-    public function setBuyAmount(Amount $buyAmount): static
+    public function setBuyAmount(?Amount $buyAmount): static
     {
         $this->buyAmount = $buyAmount;
 
         return $this;
     }
 
-    public function setFee($fee): static
+    public function setFee(?Amount $fee): static
     {
         $this->fee = $fee;
 
