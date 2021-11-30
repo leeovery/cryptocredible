@@ -7,46 +7,32 @@ use App\Exchanges\Coinbase\Facades\Coinbase;
 use App\Managers\TransactionProcessManager;
 use Illuminate\Support\Collection;
 
-class SyncCoinbase extends SyncCommand
+class SyncCoinbase extends AbstractSyncCommand
 {
     protected string $exchangeName = 'Coinbase';
 
-    public function handle()
+    public function registerHandlers()
     {
-        $this->title($this->exchangeName);
-
-        $this->outputTransactions(
-            $this->processTransactions($this->fetchTransactions())
-        );
-
-        $this->info('Output successful ✅');
+        $this
+            ->registerFetchHandler(fn () => $this->fetchCoinbaseTransactions())
+            ->registerProcessHandler(fn ($txs) => $this->processCoinbaseTransactions($txs));
     }
 
-    public function processTransactions(Collection $transactions): Collection
+    private function processCoinbaseTransactions(Collection $transactions): Collection
     {
-        $this->info('Process transactions...');
-        $this->task('Normalise data & match up trades', function () use (&$transactions) {
-            $transactions = TransactionProcessManager::coinbase()->process($transactions);
-        });
-
-        return $transactions;
+        return TransactionProcessManager::coinbase()->process($transactions);
     }
 
-    private function fetchTransactions(): Collection
+    private function fetchCoinbaseTransactions(): Collection
     {
-        $this->info('Fetch transactions...');
-
-        if ($transactions = $this->getTransactionListFromProvidedFile()) {
-            return $transactions;
-        }
-
         $accounts = collect();
         $this->task('Open Coinbase connection', function () use (&$accounts) {
             $accounts = Coinbase::fetchAllAccounts();
         });
 
-        $this->line('Fetch transactions for:');
-        $transactions = $accounts->flatMap(function (CoinbaseAccount $account) {
+        $this->comment('Fetch transactions for:');
+
+        return $accounts->flatMap(function (CoinbaseAccount $account) {
             $transactions = collect();
             $this->task("    {$account->name()}", function () use ($account, &$transactions) {
                 $transactions = Coinbase::fetchAllTransactions($account);
@@ -54,11 +40,5 @@ class SyncCoinbase extends SyncCommand
 
             return $transactions;
         })->filter();
-
-        $this->dumpTransactionsToFile($transactions);
-
-        $this->newLine();
-
-        return $transactions;
     }
 }
