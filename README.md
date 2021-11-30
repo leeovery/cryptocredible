@@ -3,9 +3,9 @@
 
 ###### _tldr: run locally to export your crypto tx data from popular exchanges via api connections._
 
-Ever tried to export your transaction data from a crypto exchange only to find out there's a load of data missing? 🙄<br>
+Ever tried to export your crypto transactions from an exchange only to find out there's missing data? 🙄<br>
 ...or that the file format is completely different from every other exchange? 🙄<br>
-...or that they didn't account for the fees, so your tax is too high? 🙄
+...or that they didn't account for the fees, so your tax is now too high? 🙄
 
 Well, this tool is for you...
 
