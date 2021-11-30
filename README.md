@@ -14,8 +14,8 @@ Install locally, and with a single command, CryptoCredible will safely and secur
 What's better is the output is designed to work perfectly with the amazing open source tax software [BittyTax](https://github.com/BittyTax/BittyTax).
 
 #### Supported exchanges
-* Coinbase
-* Coinbase Pro
+* [Coinbase](https://github.com/leeovery/cryptocredible/tree/develop#coinbase)
+* [Coinbase Pro](https://github.com/leeovery/cryptocredible/tree/develop#coinbase-pro)
 * _...with more coming soon!_
 
 ## Installation
