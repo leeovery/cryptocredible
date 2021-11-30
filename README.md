@@ -20,21 +20,27 @@ What's better is the output is designed to work perfectly with the amazing open 
 
 ## Installation
 
-To run CryptoCredible you will need to install php locally on your system. 
+To run CryptoCredible you will first need to install php locally on your system. 
 
 #### Apple
-For Mac users this is easy. Install HomeBrew first using their instructions [here](https://brew.sh/). Then install php by entering this command into a Terminal window:
+For Mac users this is easy. 
+
+Install HomeBrew using their instructions [here](https://brew.sh/), then install php by entering this command into a Terminal window:
 
 ```bash
 brew install php
 ```
 
 #### Windows
-Windows is a little more complex. A standalone phar file will be supported soon, but for  now, you could use [Docker](https://docs.docker.com/desktop/windows/install/) or [WSL2](https://www.sitepoint.com/wsl2/).
+Windows is a little more complex. 
+
+A standalone phar file will be supported soon, but for  now, you could use [Docker](https://docs.docker.com/desktop/windows/install/) or [WSL2](https://www.sitepoint.com/wsl2/).
 
 ## Usage
 
-Open up a terminal window and run the command suitable for your exchange(s):
+First you need to configure your api connections with your crypto exchange(s) - see below. 
+
+Once that's done, open up a terminal window and run the command suitable for your exchange(s):
 
 #### Coinbase 
 
