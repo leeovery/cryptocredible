@@ -1,0 +1,14 @@
+{
+  "private": true,
+  "scripts": {
+    "prepare": "husky install",
+    "pre-commit": "lint-staged"
+  },
+  "devDependencies": {
+    "husky": "^7.0.4",
+    "lint-staged": "^12.1.2"
+  },
+  "lint-staged": {
+    "**/*.php": "php ./vendor/bin/php-cs-fixer fix --config .php-cs-fixer.php --allow-risky=yes"
+  }
+}
