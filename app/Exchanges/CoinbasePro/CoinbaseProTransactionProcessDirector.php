@@ -14,7 +14,6 @@ class CoinbaseProTransactionProcessDirector implements TransactionProcessDirecto
     private array $processors = [
         MapRawDataToTransactionProcessor::class,
         MatchOneSideTradeTransactionProcessor::class,
-        // CreateFiatDepositsForCardPurchasesProcessor::class,
     ];
 
     public function process(Collection $transactions): Collection
