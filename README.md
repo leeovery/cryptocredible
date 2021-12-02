@@ -34,7 +34,10 @@ brew install php
 #### Windows
 Windows is a little more complex. 
 
-A standalone phar file will be supported soon, but for  now, you could use [Docker](https://docs.docker.com/desktop/windows/install/) or [WSL2](https://www.sitepoint.com/wsl2/).
+A few options to get php running on your system:
+* [Docker](https://docs.docker.com/desktop/windows/install/)
+* [XAMPP](https://www.apachefriends.org/index.html)
+* [WSL2](https://www.sitepoint.com/wsl2/)
 
 ## Usage
 
