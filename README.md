@@ -39,6 +39,18 @@ A few options to get php running on your system:
 * [XAMPP](https://www.apachefriends.org/index.html)
 * [WSL2](https://www.sitepoint.com/wsl2/)
 
+#### Install Dependancies
+
+Once you have setup php locally, you now need to download this package and install the required dependancies using composer. If you don't have composer installed go [here](https://getcomposer.org/) and follow the instructions.
+
+To install the dependancies, open up a fresh terminal window, change directory to the root of this project, and run:
+
+```bash
+composer install
+```
+
+You should be ready to move forward now.
+
 ## Usage
 
 First you need to configure your api connections with your crypto exchange(s) - see below. 
