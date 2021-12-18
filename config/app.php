@@ -68,6 +68,7 @@ return [
         App\Providers\AppServiceProvider::class,
         App\Providers\CoinbaseServiceProvider::class,
         App\Providers\CoinbaseProServiceProvider::class,
+        App\Providers\BinanceServiceProvider::class,
     ],
 
 ];
