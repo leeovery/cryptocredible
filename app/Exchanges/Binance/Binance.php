@@ -16,6 +16,14 @@ class Binance
 
     public function fetchDepositHistory(): Collection
     {
+        // get data from now going back in 90 day segments
+        // - how do we know when to stop fetching?
+        // (If both startTime and endTime are sent, time between startTime and endTime must be less than 90 days)
+
+        // startTime
+        // endTime
+        // limit=1000
+
         return $this->getAll('/sapi/v1/capital/deposit/hisrec')->mapInto(CoinbaseAccount::class);
     }
 

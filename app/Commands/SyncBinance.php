@@ -21,6 +21,13 @@ class SyncBinance extends AbstractSyncCommand
 
     private function fetchBinanceTransactions(): Collection
     {
+        // deposit history
+        // - https://binance-docs.github.io/apidocs/spot/en/#deposit-history-supporting-network-user_data
+        // withdrawal history
+        // - https://binance-docs.github.io/apidocs/spot/en/#withdraw-history-supporting-network-user_data
+        // trade history
+        //  - https://binance-docs.github.io/apidocs/spot/en/#account-trade-list-user_data
+        
         $accounts = collect();
         $this->task('Open Binance connection', function () use (&$accounts) {
             $accounts = Binance::fetchDepositHistory();
