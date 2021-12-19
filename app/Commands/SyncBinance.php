@@ -27,11 +27,17 @@ class SyncBinance extends AbstractSyncCommand
         // - https://binance-docs.github.io/apidocs/spot/en/#withdraw-history-supporting-network-user_data
         // trade history
         //  - https://binance-docs.github.io/apidocs/spot/en/#account-trade-list-user_data
-        
-        $accounts = collect();
-        $this->task('Open Binance connection', function () use (&$accounts) {
-            $accounts = Binance::fetchDepositHistory();
-            dd($accounts);
+        // fiat deposit / withdrawals
+        // - https://binance-docs.github.io/apidocs/spot/en/#get-fiat-deposit-withdraw-history-user_data
+        // fiat payments - what are these?
+        // - https://binance-docs.github.io/apidocs/spot/en/#get-fiat-payments-history-user_data
+        // conversions
+        // - https://binance-docs.github.io/apidocs/spot/en/#convert-endpoints
+
+        $depositHistory = collect();
+        $this->task('Fetch deposit history', function () use (&$depositHistory) {
+            $depositHistory = Binance::fetchDepositHistory();
+            dd($depositHistory);
         });
 
         dd('---');

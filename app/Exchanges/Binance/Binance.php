@@ -18,6 +18,7 @@ class Binance
     {
         // get data from now going back in 90 day segments
         // - how do we know when to stop fetching?
+        // - we cant so keep fetching back to 1483228800000 (Sun 1 January 2017 00:00:00)
         // (If both startTime and endTime are sent, time between startTime and endTime must be less than 90 days)
 
         // startTime
