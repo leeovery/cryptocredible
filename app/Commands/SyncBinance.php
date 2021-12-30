@@ -34,6 +34,10 @@ class SyncBinance extends AbstractSyncCommand
         // conversions
         // - https://binance-docs.github.io/apidocs/spot/en/#convert-endpoints
 
+        // dump transactions into a tmp dir every x number of fetches
+        // if stopped then continue from where left off (how?)
+        // add arg to purge tmp files to start again
+
         $depositHistory = collect();
         $this->task('Fetch deposit history', function () use (&$depositHistory) {
             $depositHistory = Binance::fetchDepositHistory();
