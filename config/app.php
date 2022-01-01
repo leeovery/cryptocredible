@@ -66,6 +66,7 @@ return [
 
     'providers' => [
         App\Providers\AppServiceProvider::class,
+        App\Services\Buzz\Providers\BuzzServiceProvider::class,
         App\Providers\CoinbaseServiceProvider::class,
         App\Providers\CoinbaseProServiceProvider::class,
         App\Providers\BinanceServiceProvider::class,

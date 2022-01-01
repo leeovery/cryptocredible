@@ -6,6 +6,7 @@ use App\Exchanges\Binance\Facades\Binance;
 use App\Exchanges\CoinbasePro\CoinbaseProAccount;
 use App\Exchanges\CoinbasePro\Facades\CoinbasePro;
 use App\Managers\TransactionProcessManager;
+use App\Services\Buzz\Facade\Buzz;
 use Illuminate\Support\Collection;
 
 class SyncBinance extends AbstractSyncCommand
@@ -41,7 +42,11 @@ class SyncBinance extends AbstractSyncCommand
         $depositHistory = collect();
         $this->task('Fetch deposit history', function () use (&$depositHistory) {
             $depositHistory = Binance::fetchDepositHistory();
-            dd($depositHistory);
+        });
+
+        $withdrawalHistory = collect();
+        $this->task('Fetch withdrawal history', function () use (&$withdrawalHistory) {
+            $withdrawalHistory = Binance::fetchWithdrawalHistory();
         });
 
         dd('---');

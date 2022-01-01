@@ -5,10 +5,9 @@ namespace App\Commands;
 use App\Facades\TransactionOutputManager;
 use Closure;
 use Illuminate\Support\Collection;
-use LaravelZero\Framework\Commands\Command;
 use Symfony\Component\Console\Input\InputOption;
 
-abstract class AbstractSyncCommand extends Command
+abstract class AbstractSyncCommand extends BaseCommand
 {
     protected string $exchangeName = '';
 

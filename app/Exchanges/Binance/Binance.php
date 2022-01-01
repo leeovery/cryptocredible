@@ -3,79 +3,116 @@
 namespace App\Exchanges\Binance;
 
 use App\Exchanges\Binance\Exceptions\BinanceException;
+use App\Services\Buzz\Facade\Buzz;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Str;
 
 class Binance
 {
-    private Carbon $baseStartDate;
+    private Carbon $binanceEpoch;
 
     public function __construct(private string $apiKey, private string $apiSecret)
     {
-        $this->baseStartDate = Carbon::createFromTimestampMsUTC(1483228800000);
+        $this->binanceEpoch = Carbon::createFromTimestampMsUTC(1483228800000);
     }
 
     public function fetchDepositHistory(): Collection
     {
-        // get data from now going back in 90 day segments
-        // - start 1483228800000 (Sun 1 January 2017 00:00:00)
-        // - end now
-        // (If both startTime and endTime are sent, time between startTime and endTime must be less than 90 days)
+        // "amount" => "0.08064386"
+        // "coin" => "ETH"
+        // "network" => "ETH"
+        // "status" => 1
+        // "address" => "0x01f120a054422b6bf4c0dd79e208fe9517dcabe3"
+        // "addressTag" => ""
+        // "txId" => "0x94dca6d26fe55e0a240ee5983f369fedb90b0dfefb31d291213cb455b2807b5f"
+        // "insertTime" => 1515625493000
+        // "confirmTimes" => "12/12"
+        // "unlockConfirm" => 0
+        // "walletType" => 0
 
-        // recvWindow = 10_000
-        // status = 1
-        // startTime
-        // endTime
-        // limit=1000
+        Buzz::newLine();
+        $progressBar = Buzz::progressBar();
 
-        $query = [
-            'recvWindow' => 10_000,
-            'status'     => 1,
-            'limit'      => 1000,
-        ];
+        $endTime = now();
+        return collect(CarbonPeriod::start($this->binanceEpoch)->untilNow()->days(90))
+            ->reverse()
+            ->tap(function ($items) use ($progressBar) {
+                $progressBar->start($items->count());
+            })
+            ->flatMap(function (Carbon $period) use ($progressBar, &$endTime) {
+                $results = $this->get('/sapi/v1/capital/deposit/hisrec', [
+                    'recvWindow' => 10_000,
+                    'status'     => 1,
+                    'limit'      => 1000,
+                    'startTime'  => $period->getTimestampMs(),
+                    'endTime'    => $endTime->getTimestampMs(),
+                ]);
 
-        // endTime=1485281835381
-        // "endTime" => 1491004800000
+                $endTime = $period->subMillisecond();
 
-        // 7776000000
-        // 7776000000
-        // 90 days in ms
+                $progressBar->advance();
 
-        // startTime=1625249835381
-        // Fri 2 July 2021 19:17:15
-        // endTime=1633025835381
-        // Thu 30 September 2021 19:17:15
-
-        $period = CarbonPeriod::since($this->baseStartDate)
-            ->days(90)
-            ->until(now());
-
-        dd($period);
-
-        $query = array_merge([
-            'startTime' => $this->baseStartDate->getTimestampMs(),
-            'endTime'   => $this->baseStartDate->addDays(90)->getTimestampMs(),
-        ], $query);
-        dd($query);
-
-        $results = $this->get('/sapi/v1/capital/deposit/hisrec');
-
-        dd($results);
+                return $results->json();
+            })->filter()->tap(function () use ($progressBar) {
+                $progressBar->finish();
+                Buzz::moveCursorUp(2)->eraseToEnd();
+            });
     }
 
-    private function get($url): Response
+    public function fetchWithdrawalHistory(): Collection
     {
-        $url = Str::of($url)->start('/');
-        $params = [
-            'timestamp' => now()->getTimestampMs(),
-        ];
-        $signature = hash_hmac(
+        // "id" => "5bb7070bedd940e3a34b7dca3fd49e9b"
+        // "amount" => "279.47"
+        // "transactionFee" => "0.25"
+        // "coin" => "XRP"
+        // "status" => 6
+        // "address" => "rJsg5zbUKD1bxU4XWU93Br61pcPpBWdU3B"
+        // "addressTag" => ""
+        // "txId" => "0428B4353B39BBBC8AF13A17C39B7F2D5590C1FF854CF9B8B012AF10BB16EB6A"
+        // "applyTime" => "2018-01-16 13:34:27"
+        // "transferType" => 0
+        // "info" => ""
+        // "confirmNo" => 1
+        // "walletType" => 0
+
+        Buzz::newLine();
+        $progressBar = Buzz::progressBar();
+
+        $endTime = now();
+        return collect(CarbonPeriod::start($this->binanceEpoch)->untilNow()->days(90))
+            ->reverse()
+            ->tap(function ($items) use ($progressBar) {
+                $progressBar->start($items->count());
+            })
+            ->flatMap(function (Carbon $period) use ($progressBar, &$endTime) {
+                $results = $this->get('/sapi/v1/capital/withdraw/history', [
+                    'recvWindow' => 10_000,
+                    'status'     => 6,
+                    'limit'      => 1000,
+                    'startTime'  => $period->getTimestampMs(),
+                    'endTime'    => $endTime->getTimestampMs(),
+                ]);
+
+                $endTime = $period->subMillisecond();
+
+                $progressBar->advance();
+
+                return $results->json();
+            })->filter()->tap(function () use ($progressBar) {
+                $progressBar->finish();
+                Buzz::moveCursorUp(2)->eraseToEnd();
+            });
+    }
+
+    private function get($url, array $params = []): Response
+    {
+        $params = $params + ['timestamp' => now()->getTimestampMs()];
+        $params['signature'] = hash_hmac(
             'sha256',
-            $query = http_build_query($params),
+            http_build_query($params),
             $this->apiSecret
         );
 
@@ -86,12 +123,7 @@ class Binance
             ])
             ->retry(3, 250)
             ->timeout(5)
-            ->get("{$url}&{$query}&signature={$signature}");
-    }
-
-    public function fetchAllTransactions(CoinbaseAccount $account): Collection
-    {
-        return $this->getAll("{$account->resourcePath()}/transactions?expand=all&limit=100");
+            ->get($url, $params);
     }
 
     private function getAll(string $url): Collection
