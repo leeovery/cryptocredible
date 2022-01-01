@@ -74,11 +74,18 @@ class Coinbase
     public function fetchTransactionsByWallet(Collection $wallets): Collection
     {
         Buzz::newLine();
+        $progressBar = Buzz::progressBar($wallets->count(), 'with-message');
 
-        return $wallets->flatMap(function (CoinbaseAccount $account) {
-            return Buzz::runTask("    {$account->name()}", function () use ($account, &$transactions) {
-                return $this->getAll("{$account->resourcePath()}/transactions?expand=all&limit=100");
-            }, 'fetching...');
-        })->filter();
+        return $wallets->flatMap(function (CoinbaseAccount $account) use ($progressBar) {
+            $progressBar->setMessage($account->name());
+            $transactions = $this->getAll("{$account->resourcePath()}/transactions?expand=all&limit=100");
+            $progressBar->advance();
+
+            return $transactions;
+        })->filter()->tap(function () use ($progressBar) {
+            $progressBar->finish();
+            $progressBar->clear();
+            Buzz::moveCursorUp()->eraseToEnd();
+        });
     }
 }

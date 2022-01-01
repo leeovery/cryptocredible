@@ -39,14 +39,12 @@ class SyncBinance extends AbstractSyncCommand
         // if stopped then continue from where left off (how?)
         // add arg to purge tmp files to start again
 
-        $depositHistory = collect();
-        $this->task('Fetch deposit history', function () use (&$depositHistory) {
-            $depositHistory = Binance::fetchDepositHistory();
+        $depositHistory = $this->runTask('Fetch deposit history', function () {
+            return Binance::fetchDepositHistory();
         });
 
-        $withdrawalHistory = collect();
-        $this->task('Fetch withdrawal history', function () use (&$withdrawalHistory) {
-            $withdrawalHistory = Binance::fetchWithdrawalHistory();
+        $withdrawalHistory = $this->runTask('Fetch withdrawal history', function () {
+            return Binance::fetchWithdrawalHistory();
         });
 
         dd('---');

@@ -36,13 +36,22 @@ class Buzz
         return $this;
     }
 
-    public function progressBar(): ProgressBar
+    public function progressBar(int $max = 0, string|null $format = null): ProgressBar
     {
-        return tap($this->output()->createProgressBar(), function (ProgressBar $progressBar) {
+        return tap($this->output()->createProgressBar($max), function (ProgressBar $progressBar) use ($format) {
+            $progressBar->setFormatDefinition(
+                'with-message',
+                "<fg=black;bg=cyan> %message:-41s% </>\n%current%/%max% [%bar%] %percent:3s%%\n %remaining:-20s%  %memory:20s%"
+            );
+            if (! is_null($format)) {
+                $progressBar->setFormat($format);
+            }
             $progressBar->setBarCharacter('<fg=green>=</>');
             $progressBar->setEmptyBarCharacter("<fg=red>•</>");
             $progressBar->setProgressCharacter("<fg=green>➤</>");
             $progressBar->setRedrawFrequency(1);
+            $progressBar->maxSecondsBetweenRedraws(0.2);
+            $progressBar->minSecondsBetweenRedraws(0.1);
         });
     }
 

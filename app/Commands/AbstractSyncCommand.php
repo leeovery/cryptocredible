@@ -113,7 +113,7 @@ abstract class AbstractSyncCommand extends BaseCommand
         }
     }
 
-    public function runTask(string $title = '', $task = null)
+    public function runTask(string $title = '', $task = null, string $text = '⏳ fetching...')
     {
         $returnValue = null;
         parent::task($title, function () use ($task, &$returnValue) {
@@ -124,7 +124,7 @@ abstract class AbstractSyncCommand extends BaseCommand
             } catch (Exception) {
                 return false;
             }
-        });
+        }, $text);
 
         return $returnValue;
     }
