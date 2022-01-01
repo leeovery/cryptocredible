@@ -14,8 +14,8 @@ class SyncCoinbasePro extends AbstractSyncCommand
     public function registerHandlers()
     {
         $this
-            ->registerFetchHandler(fn () => $this->fetchCoinbaseProTransactions())
-            ->registerProcessHandler(fn ($txs) => $this->processCoinbaseProTransactions($txs));
+            ->registerGetTransactionsHandler(fn () => $this->fetchCoinbaseProTransactions())
+            ->registerProcessTransactionsHandler(fn ($txs) => $this->processCoinbaseProTransactions($txs));
     }
 
     private function fetchCoinbaseProTransactions(): Collection

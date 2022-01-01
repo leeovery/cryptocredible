@@ -3,6 +3,8 @@
 namespace App\Exchanges\Coinbase;
 
 use App\Exchanges\Coinbase\Exceptions\CoinbaseException;
+use App\Exchanges\Coinbase\ValueObjects\CoinbaseAccount;
+use App\Services\Buzz\Facade\Buzz;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
@@ -14,7 +16,7 @@ class Coinbase
     {
     }
 
-    public function fetchAllAccounts(): Collection
+    public function fetchWallets(): Collection
     {
         return $this->getAll('/accounts?limit=100')->mapInto(CoinbaseAccount::class);
     }
@@ -69,8 +71,14 @@ class Coinbase
         ];
     }
 
-    public function fetchAllTransactions(CoinbaseAccount $account): Collection
+    public function fetchTransactionsByWallet(Collection $wallets): Collection
     {
-        return $this->getAll("{$account->resourcePath()}/transactions?expand=all&limit=100");
+        Buzz::newLine();
+
+        return $wallets->flatMap(function (CoinbaseAccount $account) {
+            return Buzz::runTask("    {$account->name()}", function () use ($account, &$transactions) {
+                return $this->getAll("{$account->resourcePath()}/transactions?expand=all&limit=100");
+            }, 'fetching...');
+        })->filter();
     }
 }

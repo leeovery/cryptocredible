@@ -2,10 +2,8 @@
 
 namespace App\Commands;
 
-use App\Exchanges\Coinbase\CoinbaseAccount;
 use App\Exchanges\Coinbase\Facades\Coinbase;
 use App\Managers\TransactionProcessManager;
-use Illuminate\Support\Collection;
 
 class SyncCoinbase extends AbstractSyncCommand
 {
@@ -14,31 +12,17 @@ class SyncCoinbase extends AbstractSyncCommand
     public function registerHandlers()
     {
         $this
-            ->registerFetchHandler(fn () => $this->fetchCoinbaseTransactions())
-            ->registerProcessHandler(fn ($txs) => $this->processCoinbaseTransactions($txs));
-    }
+            ->registerGetTransactionsHandler(function () {
+                $wallets = $this->runTask('Get wallets', function () {
+                    return Coinbase::fetchWallets();
+                });
 
-    private function processCoinbaseTransactions(Collection $transactions): Collection
-    {
-        return TransactionProcessManager::coinbase()->process($transactions);
-    }
-
-    private function fetchCoinbaseTransactions(): Collection
-    {
-        $accounts = collect();
-        $this->task('Open Coinbase connection', function () use (&$accounts) {
-            $accounts = Coinbase::fetchAllAccounts();
-        });
-
-        $this->comment('Fetch transactions for:');
-
-        return $accounts->flatMap(function (CoinbaseAccount $account) {
-            $transactions = collect();
-            $this->task("    {$account->name()}", function () use ($account, &$transactions) {
-                $transactions = Coinbase::fetchAllTransactions($account);
-            }, 'fetching...');
-
-            return $transactions;
-        })->filter();
+                return $this->runTask('Get transactions by wallet', function () use ($wallets) {
+                    return Coinbase::fetchTransactionsByWallet($wallets);
+                });
+            })
+            ->registerProcessTransactionsHandler(function ($transactions) {
+                return TransactionProcessManager::coinbase()->process($transactions);
+            });
     }
 }

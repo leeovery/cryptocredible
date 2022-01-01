@@ -4,6 +4,7 @@ namespace App\Commands;
 
 use App\Facades\TransactionOutputManager;
 use Closure;
+use Exception;
 use Illuminate\Support\Collection;
 use Symfony\Component\Console\Input\InputOption;
 
@@ -15,7 +16,7 @@ abstract class AbstractSyncCommand extends BaseCommand
 
     private Closure $processTransactionsHandler;
 
-    private Closure $fetchTransactionsHandler;
+    private Closure $getTransactionsHandler;
 
     public function __construct()
     {
@@ -68,7 +69,7 @@ abstract class AbstractSyncCommand extends BaseCommand
             return $transactions;
         }
 
-        $transactions = ($this->fetchTransactionsHandler)();
+        $transactions = ($this->getTransactionsHandler)();
 
         $this->dumpTransactionsToFile($transactions);
 
@@ -112,6 +113,22 @@ abstract class AbstractSyncCommand extends BaseCommand
         }
     }
 
+    public function runTask(string $title = '', $task = null)
+    {
+        $returnValue = null;
+        parent::task($title, function () use ($task, &$returnValue) {
+            try {
+                $returnValue = $task();
+
+                return true;
+            } catch (Exception) {
+                return false;
+            }
+        });
+
+        return $returnValue;
+    }
+
     protected function configure(): void
     {
         $this
@@ -136,16 +153,16 @@ abstract class AbstractSyncCommand extends BaseCommand
             );
     }
 
-    protected function registerProcessHandler(Closure $callable): self
+    protected function registerProcessTransactionsHandler(Closure $callable): self
     {
         $this->processTransactionsHandler = $callable;
 
         return $this;
     }
 
-    protected function registerFetchHandler(Closure $callable): self
+    protected function registerGetTransactionsHandler(Closure $callable): self
     {
-        $this->fetchTransactionsHandler = $callable;
+        $this->getTransactionsHandler = $callable;
 
         return $this;
     }

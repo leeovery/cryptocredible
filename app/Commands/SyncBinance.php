@@ -16,8 +16,8 @@ class SyncBinance extends AbstractSyncCommand
     public function registerHandlers()
     {
         $this
-            ->registerFetchHandler(fn () => $this->fetchBinanceTransactions())
-            ->registerProcessHandler(fn ($txs) => $this->processBinanceTransactions($txs));
+            ->registerGetTransactionsHandler(fn () => $this->fetchBinanceTransactions())
+            ->registerProcessTransactionsHandler(fn ($txs) => $this->processBinanceTransactions($txs));
     }
 
     private function fetchBinanceTransactions(): Collection

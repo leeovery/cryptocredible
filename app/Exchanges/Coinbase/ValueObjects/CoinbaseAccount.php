@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Exchanges\Coinbase;
+namespace App\Exchanges\Coinbase\ValueObjects;
 
 class CoinbaseAccount
 {
