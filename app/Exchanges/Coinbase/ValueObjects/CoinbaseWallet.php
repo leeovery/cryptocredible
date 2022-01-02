@@ -2,7 +2,7 @@
 
 namespace App\Exchanges\Coinbase\ValueObjects;
 
-class CoinbaseAccount
+class CoinbaseWallet
 {
     protected string $id;
 

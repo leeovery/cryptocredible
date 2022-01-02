@@ -3,7 +3,7 @@
 namespace App\Exchanges\Coinbase;
 
 use App\Exchanges\Coinbase\Exceptions\CoinbaseException;
-use App\Exchanges\Coinbase\ValueObjects\CoinbaseAccount;
+use App\Exchanges\Coinbase\ValueObjects\CoinbaseWallet;
 use App\Services\Buzz\Facade\Buzz;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Collection;
@@ -18,7 +18,7 @@ class Coinbase
 
     public function fetchWallets(): Collection
     {
-        return $this->getAll('/accounts?limit=100')->mapInto(CoinbaseAccount::class);
+        return $this->getAll('/accounts?limit=100')->mapInto(CoinbaseWallet::class);
     }
 
     private function getAll(string $url): Collection
@@ -76,9 +76,9 @@ class Coinbase
         Buzz::newLine();
         $progressBar = Buzz::progressBar($wallets->count(), 'with-message');
 
-        return $wallets->flatMap(function (CoinbaseAccount $account) use ($progressBar) {
-            $progressBar->setMessage($account->name());
-            $transactions = $this->getAll("{$account->resourcePath()}/transactions?expand=all&limit=100");
+        return $wallets->flatMap(function (CoinbaseWallet $wallet) use ($progressBar) {
+            $progressBar->setMessage($wallet->name());
+            $transactions = $this->getAll("{$wallet->resourcePath()}/transactions?expand=all&limit=100");
             $progressBar->advance();
 
             return $transactions;

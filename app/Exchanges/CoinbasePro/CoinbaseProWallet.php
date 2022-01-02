@@ -2,7 +2,7 @@
 
 namespace App\Exchanges\CoinbasePro;
 
-class CoinbaseProAccount
+class CoinbaseProWallet
 {
     protected string $id;
 

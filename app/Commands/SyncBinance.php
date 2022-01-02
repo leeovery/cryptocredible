@@ -3,7 +3,7 @@
 namespace App\Commands;
 
 use App\Exchanges\Binance\Facades\Binance;
-use App\Exchanges\CoinbasePro\CoinbaseProAccount;
+use App\Exchanges\CoinbasePro\CoinbaseProWallet;
 use App\Exchanges\CoinbasePro\Facades\CoinbasePro;
 use App\Managers\TransactionProcessManager;
 use App\Services\Buzz\Facade\Buzz;
@@ -39,11 +39,11 @@ class SyncBinance extends AbstractSyncCommand
         // if stopped then continue from where left off (how?)
         // add arg to purge tmp files to start again
 
-        $depositHistory = $this->runTask('Fetch deposit history', function () {
+        $depositHistory = $this->runTask('Get deposit history', function () {
             return Binance::fetchDepositHistory();
         });
 
-        $withdrawalHistory = $this->runTask('Fetch withdrawal history', function () {
+        $withdrawalHistory = $this->runTask('Get withdrawal history', function () {
             return Binance::fetchWithdrawalHistory();
         });
 
@@ -51,19 +51,11 @@ class SyncBinance extends AbstractSyncCommand
 
         $this->comment('Fetch transactions for:');
 
-        return $accounts->flatMap(function (CoinbaseProAccount $account) {
-            $transactions = collect();
-            $this->task("    {$account->currency()} Wallet", function () use ($account, &$transactions) {
-                $transactions = CoinbasePro::fetchAllTransactions($account)
-                    ->map(fn (array $tx) => tap($tx, fn (&$tx) => $tx['currency'] = $account->currency()));
-            }, 'fetching...');
 
-            return $transactions;
-        })->filter();
     }
 
     private function processBinanceTransactions(Collection $transactions): Collection
     {
-        return TransactionProcessManager::coinbasePro()->process($transactions);
+        return TransactionProcessManager::binance()->process($transactions);
     }
 }

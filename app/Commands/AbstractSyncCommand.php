@@ -4,7 +4,6 @@ namespace App\Commands;
 
 use App\Facades\TransactionOutputManager;
 use Closure;
-use Exception;
 use Illuminate\Support\Collection;
 use Symfony\Component\Console\Input\InputOption;
 
@@ -45,18 +44,18 @@ abstract class AbstractSyncCommand extends BaseCommand
     protected function outputTransactions(Collection $transactions): void
     {
         $this->alert('Output data');
-        $this->task('Steaming output to csv file', function () use ($transactions) {
+        $this->runTask('Steaming output to csv file', function () use ($transactions) {
             TransactionOutputManager::run($transactions, $this->exchangeName, $this->option('output-dir'));
-        });
+        }, 'streaming...');
         $this->newLine(2);
     }
 
     protected function processTransactions(Collection $transactions): Collection
     {
         $this->alert('Process transactions');
-        $this->task('Normalise data & match up trades', function () use (&$transactions) {
-            $transactions = ($this->processTransactionsHandler)($transactions);
-        });
+        $transactions = $this->runTask('Normalise data & match up trades', function () use ($transactions) {
+            return ($this->processTransactionsHandler)($transactions);
+        }, 'normalising...');
         $this->newLine(2);
 
         return $transactions;
@@ -84,10 +83,8 @@ abstract class AbstractSyncCommand extends BaseCommand
             return null;
         }
 
-        $transactions = collect();
-
-        $this->task('Use provided json file', function () use ($file, &$transactions) {
-            $transactions = collect(json_decode(file_get_contents($file), true));
+        $transactions = $this->runTask('Use provided json file', function () use ($file) {
+            return collect(json_decode(file_get_contents($file), true));
         });
 
         if ($transactions->isEmpty()) {
@@ -107,26 +104,11 @@ abstract class AbstractSyncCommand extends BaseCommand
                 ->append($this->exchangeName.'-transaction-dump-'.now().'.json')
                 ->lower();
             $this->newLine();
-            $this->task("Dumping data to {$outputDir}", function () use ($outputDir, $transactions) {
+
+            $this->runTask("Dumping data to {$outputDir}", function () use ($outputDir, $transactions) {
                 file_put_contents($outputDir, $transactions->toJson());
-            });
+            }, '⏬ dumping...');
         }
-    }
-
-    public function runTask(string $title = '', $task = null, string $text = '⏳ fetching...')
-    {
-        $returnValue = null;
-        parent::task($title, function () use ($task, &$returnValue) {
-            try {
-                $returnValue = $task();
-
-                return true;
-            } catch (Exception) {
-                return false;
-            }
-        }, $text);
-
-        return $returnValue;
     }
 
     protected function configure(): void
@@ -143,7 +125,7 @@ abstract class AbstractSyncCommand extends BaseCommand
                 'json',
                 '--j',
                 InputOption::VALUE_OPTIONAL,
-                'Provide a json file rather than fetch txs via api.'
+                'Provide a json file rather than fetch transactions via api.'
             )
             ->addOption(
                 'dump',

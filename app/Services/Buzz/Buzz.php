@@ -41,7 +41,9 @@ class Buzz
         return tap($this->output()->createProgressBar($max), function (ProgressBar $progressBar) use ($format) {
             $progressBar->setFormatDefinition(
                 'with-message',
-                "<fg=black;bg=cyan> %message:-41s% </>\n%current%/%max% [%bar%] %percent:3s%%\n %remaining:-20s%  %memory:20s%"
+                "<fg=black;bg=cyan> %message:-41s% </>\n"
+                ."%current%/%max% [%bar%] %percent:3s%%\n"
+                ." %remaining:-20s%  %memory:20s%"
             );
             if (! is_null($format)) {
                 $progressBar->setFormat($format);

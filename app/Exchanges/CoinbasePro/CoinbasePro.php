@@ -3,6 +3,7 @@
 namespace App\Exchanges\CoinbasePro;
 
 use App\Exchanges\CoinbasePro\Exceptions\CoinbaseProException;
+use App\Services\Buzz\Facade\Buzz;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
@@ -14,9 +15,9 @@ class CoinbasePro
     {
     }
 
-    public function fetchAllAccounts(): Collection
+    public function fetchWallets(): Collection
     {
-        return $this->getAll('/accounts')->mapInto(CoinbaseProAccount::class);
+        return $this->getAll('/accounts')->mapInto(CoinbaseProWallet::class);
     }
 
     private function getAll(string $url): Collection
@@ -77,8 +78,24 @@ class CoinbasePro
         ];
     }
 
-    public function fetchAllTransactions(CoinbaseProAccount $account): Collection
+    public function fetchTransactionsByWallet(Collection $wallets): Collection
     {
-        return $this->getAll("/accounts/{$account->id()}/ledger");
+        Buzz::newLine();
+        $progressBar = Buzz::progressBar($wallets->count(), 'with-message');
+
+        return $wallets->flatMap(function (CoinbaseProWallet $wallet) use ($progressBar) {
+            $progressBar->setMessage("{$wallet->currency()} Wallet");
+
+            $transactions = $this->getAll("/accounts/{$wallet->id()}/ledger")
+                ->map(fn(array $tx) => tap($tx, fn(&$tx) => $tx['currency'] = $wallet->currency()));
+
+            $progressBar->advance();
+
+            return $transactions;
+        })->filter()->tap(function () use ($progressBar) {
+            $progressBar->finish();
+            $progressBar->clear();
+            Buzz::moveCursorUp()->eraseToEnd();
+        });
     }
 }
