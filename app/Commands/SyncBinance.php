@@ -22,10 +22,6 @@ class SyncBinance extends AbstractSyncCommand
 
     private function fetchBinanceTransactions(): Collection
     {
-        // deposit history
-        // - https://binance-docs.github.io/apidocs/spot/en/#deposit-history-supporting-network-user_data
-        // withdrawal history
-        // - https://binance-docs.github.io/apidocs/spot/en/#withdraw-history-supporting-network-user_data
         // trade history
         //  - https://binance-docs.github.io/apidocs/spot/en/#account-trade-list-user_data
         // fiat deposit / withdrawals
@@ -45,11 +41,29 @@ class SyncBinance extends AbstractSyncCommand
             return Binance::fetchDepositHistory();
         }));
 
-        $transactions->put('withdrawals', $this->runTask('Get withdrawal history', function () {
-            return Binance::fetchWithdrawalHistory();
+        dd('poo');
+
+        // $transactions->put('withdrawals', $this->runTask('Get withdrawal history', function () {
+        //     return Binance::fetchWithdrawalHistory();
+        // }));
+
+        // Get Fiat Deposit/Withdraw History (USER_DATA)
+        // https://binance-docs.github.io/apidocs/spot/en/#get-fiat-deposit-withdraw-history-user_data
+        $transactions->put('fiatDeposits', $this->runTask('Get fiat deposit history', function () {
+            return Binance::fetchFiatDepositHistory();
         }));
-        
-        dd($transactions->count(), $transactions->get('deposits')->count(), $transactions->get('withdrawals')->count());
+        // $transactions->put('fiatWithdrawals', $this->runTask('Get fiat withdrawal history', function () {
+        //     return Binance::fetchWithdrawalHistory();
+        // }));
+
+        dd($transactions);
+
+
+        dd(
+            $transactions->count(),
+            'deposits: '.$transactions->get('deposits')->count(),
+            'withdrawals: '.$transactions->get('withdrawals')->count()
+        );
 
         $this->comment('Fetch transactions for:');
 

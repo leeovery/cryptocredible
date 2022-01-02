@@ -1,5 +1,9 @@
 <?php
 
+use App\Services\Pool\ExpectingIterator;
+use App\Services\Pool\MapIterator;
+use GuzzleHttp\Promise\Each;
+use GuzzleHttp\Promise\PromiseInterface;
 use Illuminate\Support\Str;
 
 if (! function_exists('str')) {
@@ -31,5 +35,20 @@ if (! function_exists('is_fiat')) {
     function is_fiat(string $currency): bool
     {
         return in_array((string) \str($currency)->upper()->trim(), config('app.fiat_currencies'));
+    }
+}
+
+if (! function_exists('dynamic_pool')) {
+    function dynamic_pool(iterable $initialWorkload, callable $handler, int $concurrency = 10): PromiseInterface
+    {
+        $workload = new ArrayIterator;
+        foreach ($initialWorkload as $item) {
+            $workload->append($item);
+        }
+
+        return Each::ofLimit(
+            new ExpectingIterator(new MapIterator($workload, $handler)),
+            $concurrency
+        );
     }
 }
