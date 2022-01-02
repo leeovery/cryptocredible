@@ -47,7 +47,7 @@ class SyncBinance extends AbstractSyncCommand
             return Binance::fetchWithdrawalHistory();
         });
 
-        dd('---');
+        dd($depositHistory->count(), $withdrawalHistory->count());
 
         $this->comment('Fetch transactions for:');
 

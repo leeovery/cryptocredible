@@ -2,9 +2,11 @@
 
 namespace App\Exchanges\Binance;
 
-use App\Exchanges\Binance\Exceptions\BinanceException;
 use App\Services\Buzz\Facade\Buzz;
 use Carbon\CarbonPeriod;
+use GuzzleHttp\Promise\PromiseInterface;
+use Illuminate\Http\Client\Factory;
+use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -33,33 +35,100 @@ class Binance
         // "unlockConfirm" => 0
         // "walletType" => 0
 
+        return $this->fetchUsingTimestamps('/sapi/v1/capital/deposit/hisrec', [
+            'status' => 1,
+        ]);
+    }
+
+    private function fetchUsingTimestamps(string $url, array $params = [], int $days = 90): Collection
+    {
         Buzz::newLine();
         $progressBar = Buzz::progressBar();
 
-        $endTime = now();
-        return collect(CarbonPeriod::start($this->binanceEpoch)->untilNow()->days(90))
-            ->reverse()
-            ->tap(function ($items) use ($progressBar) {
-                $progressBar->start($items->count());
-            })
-            ->flatMap(function (Carbon $period) use ($progressBar, &$endTime) {
-                $results = $this->get('/sapi/v1/capital/deposit/hisrec', [
-                    'recvWindow' => 10_000,
-                    'status'     => 1,
-                    'limit'      => 1000,
-                    'startTime'  => $period->getTimestampMs(),
-                    'endTime'    => $endTime->getTimestampMs(),
-                ]);
+        $responses = Http::pool(function (Pool $pool) use ($params, $days, $url, $progressBar) {
+            $endTime = now();
 
-                $endTime = $period->subMillisecond();
+            return collect(CarbonPeriod::start($this->binanceEpoch)->untilNow()->days($days))
+                ->reverse()
+                ->tap(function ($items) use ($progressBar) {
+                    $progressBar->start($items->count());
+                })
+                ->map(function (Carbon $period) use ($params, $url, $pool, $progressBar, &$endTime) {
+                    $request = $this->getAsync($pool, $url, array_merge($params, [
+                        'recvWindow' => 5_000,
+                        'limit'      => 1_000,
+                        'startTime'  => $period->getTimestampMs(),
+                        'endTime'    => $endTime->getTimestampMs(),
+                    ]))->then(function () use ($progressBar) {
+                        $progressBar->advance();
+                    });
 
-                $progressBar->advance();
+                    $endTime = $period->subMillisecond();
 
-                return $results->json();
-            })->filter()->tap(function () use ($progressBar) {
-                $progressBar->finish();
-                Buzz::moveCursorUp(2)->eraseToEnd();
-            });
+                    return $request;
+                });
+        });
+
+        return collect($responses)->flatMap(function (Response $response) {
+            return $response->json();
+        })->filter()->tap(function () use ($progressBar) {
+            $progressBar->finish();
+            Buzz::moveCursorUp(2)->eraseToEnd();
+        });
+
+        // Buzz::newLine();
+        // $progressBar = Buzz::progressBar();
+        //
+        // $endTime = now();
+        //
+        // return collect(CarbonPeriod::start($this->binanceEpoch)->untilNow()->days(90))
+        //     ->reverse()
+        //     ->tap(function ($items) use ($progressBar) {
+        //         $progressBar->start($items->count());
+        //     })
+        //     ->flatMap(function (Carbon $period) use ($progressBar, &$endTime) {
+        //         $results = $this->get('/sapi/v1/capital/deposit/hisrec', [
+        //             'recvWindow' => 10_000,
+        //             'status'     => 1,
+        //             'limit'      => 1000,
+        //             'startTime'  => $period->getTimestampMs(),
+        //             'endTime'    => $endTime->getTimestampMs(),
+        //         ]);
+        //
+        //         $endTime = $period->subMillisecond();
+        //
+        //         $progressBar->advance();
+        //
+        //         return $results->json();
+        //     })->filter()->tap(function () use ($progressBar) {
+        //         $progressBar->finish();
+        //         Buzz::moveCursorUp(2)->eraseToEnd();
+        //     });
+    }
+
+    private function getAsync(Pool $pool, string $url, array $params = []): PromiseInterface|Response
+    {
+        return $this->get($url, $params, $pool);
+    }
+
+    private function get(string $url, array $params = [], null|Pool $pool = null): PromiseInterface|Response
+    {
+        $params = $params + ['timestamp' => now()->getTimestampMs()];
+        $params['signature'] = hash_hmac(
+            'sha256',
+            http_build_query($params),
+            $this->apiSecret
+        );
+
+        return ($pool ?? resolve(Factory::class))
+            ->baseUrl('https://api.binance.com')
+            ->contentType('application/json')
+            ->withHeaders([
+                'X-MBX-APIKEY' => $this->apiKey,
+            ])
+            ->retry(3, 250)
+            ->timeout(5)
+            ->get($url, $params);
     }
 
     public function fetchWithdrawalHistory(): Collection
@@ -78,79 +147,8 @@ class Binance
         // "confirmNo" => 1
         // "walletType" => 0
 
-        Buzz::newLine();
-        $progressBar = Buzz::progressBar();
-
-        $endTime = now();
-        return collect(CarbonPeriod::start($this->binanceEpoch)->untilNow()->days(90))
-            ->reverse()
-            ->tap(function ($items) use ($progressBar) {
-                $progressBar->start($items->count());
-            })
-            ->flatMap(function (Carbon $period) use ($progressBar, &$endTime) {
-                $results = $this->get('/sapi/v1/capital/withdraw/history', [
-                    'recvWindow' => 10_000,
-                    'status'     => 6,
-                    'limit'      => 1000,
-                    'startTime'  => $period->getTimestampMs(),
-                    'endTime'    => $endTime->getTimestampMs(),
-                ]);
-
-                $endTime = $period->subMillisecond();
-
-                $progressBar->advance();
-
-                return $results->json();
-            })->filter()->tap(function () use ($progressBar) {
-                $progressBar->finish();
-                Buzz::moveCursorUp(2)->eraseToEnd();
-            });
-    }
-
-    private function get($url, array $params = []): Response
-    {
-        $params = $params + ['timestamp' => now()->getTimestampMs()];
-        $params['signature'] = hash_hmac(
-            'sha256',
-            http_build_query($params),
-            $this->apiSecret
-        );
-
-        return Http::baseUrl('https://api.binance.com')
-            ->contentType('application/json')
-            ->withHeaders([
-                'X-MBX-APIKEY' => $this->apiKey,
-            ])
-            ->retry(3, 250)
-            ->timeout(5)
-            ->get($url, $params);
-    }
-
-    private function getAll(string $url): Collection
-    {
-        $collection = collect();
-
-        while (true) {
-
-            $response = $this->get($url);
-
-            throw_unless($response->successful(), BinanceException::requestFailed());
-            $results = $response->json();
-
-            dd($results);
-
-            $url = data_get($results, 'pagination.next_uri');
-            if ($data = data_get($results, 'data')) {
-                $collection->push(...$data);
-            }
-
-            if (is_null($url)) {
-                goto end;
-            }
-        }
-
-        end:
-
-        return $collection;
+        return $this->fetchUsingTimestamps('/sapi/v1/capital/withdraw/history', [
+            'status' => 6,
+        ]);
     }
 }
