@@ -120,6 +120,8 @@ class Binance
             $this->apiSecret
         );
 
+        dd($params);
+
         return ($pool ?? resolve(Factory::class))
             ->baseUrl('https://api.binance.com')
             ->contentType('application/json')
