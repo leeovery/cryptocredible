@@ -36,7 +36,7 @@ class Binance
     {
         return $this->fetchUsingTimestamps('/sapi/v1/capital/deposit/hisrec', [
             'status' => 1,
-            'limit'  => 5,
+            'limit'  => 30,
         ]);
     }
 
