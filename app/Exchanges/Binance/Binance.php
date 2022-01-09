@@ -5,10 +5,7 @@ namespace App\Exchanges\Binance;
 use App\Services\Buzz\Facade\Buzz;
 use ArrayIterator;
 use Carbon\CarbonPeriod;
-use GuzzleHttp\Client;
 use GuzzleHttp\Promise\PromiseInterface;
-use GuzzleHttp\Utils;
-use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Carbon;
@@ -39,56 +36,70 @@ class Binance
     {
         return $this->fetchUsingTimestamps('/sapi/v1/capital/deposit/hisrec', [
             'status' => 1,
-            'limit'  => 1_000,
+            'limit'  => 5,
         ]);
     }
 
     private function fetchUsingTimestamps(
         string $url,
         array  $params = [],
-        string $startTimeKey = 'startTime',
-        int    $days = 10
     ): Collection {
 
         Buzz::newLine();
         $progressBar = Buzz::progressBar();
 
-        // handler should yield params from array iterator
-        // resolved promises can then append to iterator and handler will yield them
+        $results = collect();
 
-        // with dynamic pooling but not working as expected...
+        $days = 90;
+
         $endTime = now();
         $queryCollection = collect(CarbonPeriod::start($this->binanceEpoch)->untilNow()->days($days))
             ->reverse()
             ->tap(fn($items) => $progressBar->start($items->count()))
-            ->map(function (Carbon $period) use ($startTimeKey, $params, $url, &$endTime) {
-
+            ->map(function (Carbon $period) use ($params, $url, &$endTime) {
                 $params = array_merge([
-                    'recvWindow'  => 60_000,
-                    'offset'      => 0,
-                    $startTimeKey => $period->getTimestampMs(),
-                    'endTime'     => $endTime->getTimestampMs(),
+                    'recvWindow' => 60_000,
+                    'offset'     => 0,
+                    'startTime'  => $period->getTimestampMs(),
+                    'endTime'    => $endTime->getTimestampMs(),
                 ], $params);
-
                 $endTime = $period->subMillisecond();
 
                 return $params;
             });
 
-        $handler = function ($queryArray, ArrayIterator $workload) use ($url, $progressBar) {
-            return $this->getAsync($url, $queryArray)->then(function ($response) use ($workload, $progressBar) {
+        $handler = function ($queryArray, ArrayIterator $workload) use ($results, $url, $progressBar) {
+            return $this->getAsync($url, $queryArray)->then(function (Response $response) use (
+                $results,
+                $workload,
+                $progressBar
+            ) {
                 $progressBar->advance();
 
-                // $workload->append($next->shift());
+                $params = [];
+                parse_str($response->effectiveUri()->getQuery(), $params);
+                $resultCount = count($response->json());
+
+                dump($resultCount);
+                if ($resultCount === (int) $params['limit']) {
+                    dump('eee');
+                    $progressBar->setMaxSteps($progressBar->getMaxSteps() + 1);
+                    $params['offset'] = (string) ($params['offset'] + $params['limit']);
+                    unset($params['timestamp'], $params['signature']);
+                    $workload->append($params);
+                }
+
+                $results->push(...$response->json());
+
                 return $response;
             });
         };
 
-        $pool = dynamic_pool($queryCollection, $handler, 25);
+        $pool = dynamic_pool($queryCollection, $handler);
 
         $responses = $pool->wait();
 
-        dd($responses, 'poo');
+        dd($results->filter()->count());
 
 
         //

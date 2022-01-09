@@ -39,7 +39,7 @@ if (! function_exists('is_fiat')) {
 }
 
 if (! function_exists('dynamic_pool')) {
-    function dynamic_pool(iterable $initialWorkload, callable $handler, int $concurrency = 10): PromiseInterface
+    function dynamic_pool(iterable $initialWorkload, callable $handler, int $concurrency = 25): PromiseInterface
     {
         $workload = new ArrayIterator;
         foreach ($initialWorkload as $item) {
