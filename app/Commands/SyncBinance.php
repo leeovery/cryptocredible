@@ -41,7 +41,7 @@ class SyncBinance extends AbstractSyncCommand
             return Binance::fetchDepositHistory();
         }));
 
-        dd('poo');
+        dd('-----');
 
         // $transactions->put('withdrawals', $this->runTask('Get withdrawal history', function () {
         //     return Binance::fetchWithdrawalHistory();

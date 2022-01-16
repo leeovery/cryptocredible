@@ -2,6 +2,7 @@
 
 namespace App\Services\Pool;
 
+
 use Iterator;
 
 class ExpectingIterator implements Iterator
@@ -15,7 +16,7 @@ class ExpectingIterator implements Iterator
     public function next()
     {
         if (! $this->wasValid && $this->valid()) {
-            // Just do nothing, because the inner iterator became valid
+            // Just do nothing, because the inner iterator has became valid
         } else {
             $this->inner->next();
         }
@@ -23,7 +24,7 @@ class ExpectingIterator implements Iterator
         $this->wasValid = $this->valid();
     }
 
-    public function valid(): bool
+    public function valid()
     {
         return $this->inner->valid();
     }

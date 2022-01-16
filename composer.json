@@ -26,12 +26,16 @@
     "bensampo/laravel-enum": "^4.1",
     "brick/math": "^0.9.3",
     "brick/money": "^0.5.3",
+    "clue/mq-react": "^1.4",
+    "clue/ndjson-react": "^1.2",
     "guzzlehttp/guzzle": "^7.4",
     "illuminate/http": "^8.0",
     "illuminate/log": "^8.0",
     "laminas/laminas-text": "^2.8",
     "laravel-zero/framework": "^8.8",
-    "league/csv": "^9.7"
+    "league/csv": "^9.7",
+    "react/event-loop": "^1.2",
+    "react/http": "^1.5"
   },
   "require-dev": {
     "mockery/mockery": "^1.4.3",

@@ -5,12 +5,15 @@ namespace App\Exchanges\Binance;
 use App\Services\Buzz\Facade\Buzz;
 use ArrayIterator;
 use Carbon\CarbonPeriod;
+use Clue\React\Mq\Queue;
+use Exception;
 use GuzzleHttp\Promise\PromiseInterface;
-use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
+use Psr\Http\Message\ResponseInterface;
+use React\Http\Browser;
 
 class Binance
 {
@@ -36,7 +39,7 @@ class Binance
     {
         return $this->fetchUsingTimestamps('/sapi/v1/capital/deposit/hisrec', [
             'status' => 1,
-            'limit'  => 30,
+            'limit'  => 10,
         ]);
     }
 
@@ -68,6 +71,29 @@ class Binance
                 return $params;
             });
 
+
+        $client = new Browser();
+
+        $client->get('http://www.google.com/')->then(function (ResponseInterface $response) {
+            var_dump($response->getHeaders(), (string) $response->getBody());
+        });
+
+        // wraps Browser in a Queue object that executes no more than 10 operations at once
+        $q = new Queue(10, null, function ($url) use ($client) {
+            return $client->get($url);
+        });
+
+        foreach ($urls as $url) {
+            $q($url)->then(function (ResponseInterface $response) {
+                var_dump($response->getHeaders());
+            }, function (Exception $e) {
+                echo 'Error: '.$e->getMessage().PHP_EOL;
+            });
+        }
+
+        dd('-o-o-o-o');
+
+
         $handler = function ($queryArray, ArrayIterator $workload) use ($results, $url, $progressBar) {
             return $this->getAsync($url, $queryArray)->then(function (Response $response) use (
                 $results,
@@ -76,71 +102,73 @@ class Binance
             ) {
                 $progressBar->advance();
 
+                $data = $response->json();
+                $resultCount = count($data);
+
+                $results->push(...$data);
+
                 $params = [];
                 parse_str($response->effectiveUri()->getQuery(), $params);
-                $resultCount = count($response->json());
 
                 dump($resultCount);
                 if ($resultCount === (int) $params['limit']) {
-                    dump('eee');
+                    dump('might be more txs available');
                     $progressBar->setMaxSteps($progressBar->getMaxSteps() + 1);
                     $params['offset'] = (string) ($params['offset'] + $params['limit']);
                     unset($params['timestamp'], $params['signature']);
                     $workload->append($params);
                 }
 
-                $results->push(...$response->json());
-
-                return $response;
+                return $response->json();
             });
         };
 
-        $pool = dynamic_pool($queryCollection, $handler);
+        $pool = dynamic_pool($queryCollection, $handler, 50);
 
         $responses = $pool->wait();
 
         dd($results->filter()->count());
 
 
+        // //
         //
-
-        Buzz::newLine();
-        $progressBar = Buzz::progressBar();
-
-        $responses = Http::pool(function (Pool $pool) use ($startTimeKey, $params, $days, $url, $progressBar) {
-            $endTime = now();
-
-            return collect(CarbonPeriod::start($this->binanceEpoch)->untilNow()->days($days))
-                ->reverse()
-                ->tap(function ($items) use ($progressBar) {
-                    $progressBar->start($items->count());
-                })
-                ->map(function (Carbon $period) use ($startTimeKey, $params, $url, $pool, $progressBar, &$endTime) {
-
-                    $request = $this->getAsync($pool, $url, array_merge([
-                        'recvWindow'  => 60_000,
-                        'offset'      => 0,
-                        $startTimeKey => $period->getTimestampMs(),
-                        'endTime'     => $endTime->getTimestampMs(),
-                    ], $params))->then(function () use ($pool, $progressBar) {
-                        dd($pool);
-                        $progressBar->advance();
-                    });
-
-                    $endTime = $period->subMillisecond();
-
-                    return $request;
-                });
-        });
-
-        dd('poo');
-
-        return collect($responses)->flatMap(function (Response $response) {
-            return $response->json();
-        })->filter()->tap(function () use ($progressBar) {
-            $progressBar->finish();
-            Buzz::moveCursorUp(2)->eraseToEnd();
-        });
+        // Buzz::newLine();
+        // $progressBar = Buzz::progressBar();
+        //
+        // $responses = Http::pool(function (Pool $pool) use ($startTimeKey, $params, $days, $url, $progressBar) {
+        //     $endTime = now();
+        //
+        //     return collect(CarbonPeriod::start($this->binanceEpoch)->untilNow()->days($days))
+        //         ->reverse()
+        //         ->tap(function ($items) use ($progressBar) {
+        //             $progressBar->start($items->count());
+        //         })
+        //         ->map(function (Carbon $period) use ($startTimeKey, $params, $url, $pool, $progressBar, &$endTime) {
+        //
+        //             $request = $this->getAsync($pool, $url, array_merge([
+        //                 'recvWindow'  => 60_000,
+        //                 'offset'      => 0,
+        //                 $startTimeKey => $period->getTimestampMs(),
+        //                 'endTime'     => $endTime->getTimestampMs(),
+        //             ], $params))->then(function () use ($pool, $progressBar) {
+        //                 dd($pool);
+        //                 $progressBar->advance();
+        //             });
+        //
+        //             $endTime = $period->subMillisecond();
+        //
+        //             return $request;
+        //         });
+        // });
+        //
+        // dd('---');
+        //
+        // return collect($responses)->flatMap(function (Response $response) {
+        //     return $response->json();
+        // })->filter()->tap(function () use ($progressBar) {
+        //     $progressBar->finish();
+        //     Buzz::moveCursorUp(2)->eraseToEnd();
+        // });
 
         Buzz::newLine();
         $progressBar = Buzz::progressBar();
@@ -157,12 +185,12 @@ class Binance
                     'recvWindow' => 10_000,
                     'status'     => 1,
                     'offset'     => 0,
-                    'limit'      => 2,
+                    'limit'      => 1000,
                     'startTime'  => $period->getTimestampMs(),
                     'endTime'    => $endTime->getTimestampMs(),
                 ]);
 
-                dd($results->json());
+                dump(count($results->json()));
 
                 $endTime = $period->subMillisecond();
 

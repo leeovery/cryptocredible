@@ -20,7 +20,7 @@ class MapIterator implements Iterator
         $this->inner->next();
     }
 
-    public function valid(): bool
+    public function valid()
     {
         return $this->inner->valid();
     }
