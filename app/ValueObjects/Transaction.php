@@ -4,9 +4,12 @@ namespace App\ValueObjects;
 
 use App\Enums\TransactionType;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Traits\Conditionable;
 
 class Transaction
 {
+    use Conditionable;
+
     public TransactionType $type;
 
     public ?Amount $buyAmount = null;
@@ -61,6 +64,11 @@ class Transaction
         return data_get($this->rawData, $key, $default);
     }
 
+    public function getRawData(): array
+    {
+        return $this->rawData;
+    }
+
     public function setType(TransactionType $type): static
     {
         $this->type = $type;
@@ -104,13 +112,6 @@ class Transaction
     }
 
     public function setNotes(string $notes): static
-    {
-        $this->notes = $notes;
-
-        return $this;
-    }
-
-    public function setRawData(array $array): static
     {
         $this->notes = $notes;
 
