@@ -22,7 +22,9 @@ final class TransferTransactionDataMapper implements TransactionDataMapper
                     $transaction->getRaw('amount'),
                     $transaction->getRaw('currency')
                 ))
-                ->setNotes('Funds moved to Coinbase from Coinbase Pro');
+                ->when(is_fiat($transaction->getRaw('currency')), function (Transaction $transaction) {
+                    return $transaction->setNotes('To Coinbase');
+                });
         } else {
             $transaction
                 ->setType(TransactionType::Deposit())
@@ -30,7 +32,9 @@ final class TransferTransactionDataMapper implements TransactionDataMapper
                     $transaction->getRaw('amount'),
                     $transaction->getRaw('currency')
                 ))
-                ->setNotes('Funds moved from Coinbase to Coinbase Pro');
+                ->when(is_fiat($transaction->getRaw('currency')), function (Transaction $transaction) {
+                    return $transaction->setNotes('From Coinbase');
+                });
         }
 
         return $transaction;
