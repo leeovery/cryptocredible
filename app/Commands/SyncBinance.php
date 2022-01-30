@@ -42,7 +42,6 @@ class SyncBinance extends AbstractSyncCommand
         }));
 
         $transactions->dd();
-        
 
         dd('-----');
 
