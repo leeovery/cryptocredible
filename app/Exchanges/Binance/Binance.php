@@ -72,7 +72,7 @@ class Binance
                 return $params;
             })->values();
 
-        $this->queue = new Queue(10, null, function (array $queryParams) use ($url) {
+        $this->queue = new Queue(25, null, function (array $queryParams) use ($url) {
             return $this->client->get($url.'?'.http_build_query($this->buildQueryParams($queryParams)), [
                 'X-MBX-APIKEY' => $this->apiKey,
             ]);

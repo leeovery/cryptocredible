@@ -3,10 +3,7 @@
 namespace App\Commands;
 
 use App\Exchanges\Binance\Facades\Binance;
-use App\Exchanges\CoinbasePro\CoinbaseProWallet;
-use App\Exchanges\CoinbasePro\Facades\CoinbasePro;
 use App\Managers\TransactionProcessManager;
-use App\Services\Buzz\Facade\Buzz;
 use Illuminate\Support\Collection;
 
 class SyncBinance extends AbstractSyncCommand
@@ -16,8 +13,10 @@ class SyncBinance extends AbstractSyncCommand
     public function registerHandlers()
     {
         $this
-            ->registerGetTransactionsHandler(fn () => $this->fetchBinanceTransactions())
-            ->registerProcessTransactionsHandler(fn ($txs) => $this->processBinanceTransactions($txs));
+            ->registerGetTransactionsHandler(fn() => $this->fetchBinanceTransactions())
+            ->registerProcessTransactionsHandler(function ($transactions) {
+                return TransactionProcessManager::binance()->process($transactions);
+            });
     }
 
     private function fetchBinanceTransactions(): Collection
@@ -70,10 +69,5 @@ class SyncBinance extends AbstractSyncCommand
         $this->comment('Fetch transactions for:');
 
 
-    }
-
-    private function processBinanceTransactions(Collection $transactions): Collection
-    {
-        return TransactionProcessManager::binance()->process($transactions);
     }
 }
